@@ -82,6 +82,7 @@ import org.codehaus.mojo.license.extended.spreadsheet.ExcelFileWriter;
 import org.codehaus.mojo.license.spdx.SpdxLicenseList;
 import org.codehaus.mojo.license.spdx.SpdxLicenseList.Attachments.ContentSanitizer;
 import org.codehaus.mojo.license.utils.FileUtil;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -429,7 +430,13 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
     @Parameter(property = "license.organizeLicensesByDependencies", defaultValue = "false")
     protected boolean organizeLicensesByDependencies;
 
+    /**
+     * If true, the licenses will be sorted by groupId and artifactId.
+     * <p>
+     * Deprecated since 2.5.0, use {@link #dataFormatting}<code>.orderBy</code> instead.
+     */
     @Parameter(property = "license.sortByGroupIdAndArtifactId", defaultValue = "false")
+    @Deprecated
     private boolean sortByGroupIdAndArtifactId;
 
     /**
@@ -723,7 +730,7 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
     /**
      * How the data written to the <i>MS Office Excel</i> or <i>LibreOffice Calc</i> file is formatted.
      *
-     * @since 2.4.1
+     * @since 2.5.0
      */
     @Parameter(property = "license.dataFormatting")
     private DataFormatting dataFormatting;
@@ -732,9 +739,9 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
      * To specify some licenses to exclude.
      * <p>
      * If a such license is found then build will fail when property {@link #failOnBlacklist} is <tt>true</tt>.
-     * <br>Also the list of licenses which should be highlighted as forbidden if written into an Excel or a Calc file.
+     * <br>Also, the list of licenses which should be highlighted as forbidden if written into an Excel or a Calc file.
      * <p>
-     * Since version {@code 1.4}, there are three ways to fill this parameter :
+     * There are three ways to fill this parameter :
      * <ul>
      * <li>A simple string (separated by {@code |}), the way to use by property configuration:
      *
@@ -758,7 +765,25 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
      * &lt;/excludedLicenses&gt;
      * </pre>
      *
-     * @since 2.5
+     * </li>
+     * <li>A URL that contains a set of license names at the target source (only a single URL is accepted as
+     * parameter)
+     *
+     * <pre>
+     *  &lt;excludedLicenses&gt;http://my.license.host.com/my-blacklist&lt;/excludedLicenses&gt;
+     * </pre>
+     *
+     * the license-list on the given URL is expected to be list with a line-break after every entry e.g.:
+     * <ul style="list-style-type:none;">
+     * <li>The Apache Software License, Version 2.0</li>
+     * <li>Apache License, Version 2.0</li>
+     * <li>Bouncy Castle Licence</li>
+     * <li>MIT License</li>
+     * </ul>
+     * empty lines will be ignored.</li>
+     * </ul>
+     *
+     * @since 2.5.0
      */
     @Parameter(property = "license.excludedLicenses")
     protected AbstractAddThirdPartyMojo.ExcludedLicenses excludedLicenses;
@@ -1000,7 +1025,9 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
         }
 
         try {
-            if (sortByGroupIdAndArtifactId) {
+            // The new "dataFormatting" option takes precedence over the old "sortByGroupIdAndArtifactId".
+            final boolean sorted = sortProjectLicenseInfo(depProjectLicenses);
+            if (!sorted && sortByGroupIdAndArtifactId) {
                 sortByGroupIdAndArtifactId(depProjectLicenses);
             }
 
@@ -1045,8 +1072,6 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
         List<ProjectLicenseInfo> depProjectLicenses, File outputFile, File excelOutputFile, File calcOutputFile)
         throws ParserConfigurationException, TransformerException, IOException {
 
-        sortProjectLicenseInfo(depProjectLicenses);
-
         writeLicenseSummary(depProjectLicenses, outputFile, writeVersions);
         if (writeExcelFile) {
             ExcelFileWriter.write(depProjectLicenses, excelOutputFile, dataFormatting, excludedLicenses);
@@ -1089,9 +1114,18 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
         return Collectors.joining(MessageFormat.format("\n{0}\n", Strings.repeat("=", 80)));
     }
 
-    private void sortProjectLicenseInfo(List<ProjectLicenseInfo> depProjectLicenses) {
+    /**
+     * Sort project license information by {@link #dataFormatting}<code>.orderBy</code>, if set.
+     *
+     * @param depProjectLicenses Dependency project licenses.
+     * @return If {@link #dataFormatting}<code>.orderBy</code> was set and ordering happened.
+     */
+    private boolean sortProjectLicenseInfo(List<ProjectLicenseInfo> depProjectLicenses) {
         if (dataFormatting.orderBy != null && dataFormatting.orderBy != DataFormatting.OrderBy.none) {
             depProjectLicenses.sort(this::compareProjectLicenseInfo);
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -1365,15 +1399,17 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
         }
     }
 
+    /**
+     * Sort by Group and Artifact ID.<br>
+     * Deprecated since 2.5.0: Use {@link #sortProjectLicenseInfo(List)} instead.
+     *
+     * @param depProjectLicenses Dpendency project licenses.
+     */
+    @Deprecated
     private void sortByGroupIdAndArtifactId(List<ProjectLicenseInfo> depProjectLicenses) {
-        Comparator<ProjectLicenseInfo> comparator = new Comparator<ProjectLicenseInfo>() {
-            public int compare(ProjectLicenseInfo info1, ProjectLicenseInfo info2) {
-                // ProjectLicenseInfo::getId() can not be used because . is before : thus a:b.c would be after a.b:c
-                return (info1.getGroupId() + "+" + info1.getArtifactId())
-                    .compareTo(info2.getGroupId() + "+" + info2.getArtifactId());
-            }
-        };
-        Collections.sort(depProjectLicenses, comparator);
+        // ProjectLicenseInfo::getId() can not be used because . is before : thus a:b.c would be after a.b:c
+        Comparator<ProjectLicenseInfo> comparator = Comparator.comparing(info -> (info.getGroupId() + "+" + info.getArtifactId()));
+        depProjectLicenses.sort(comparator);
     }
 
     // ----------------------------------------------------------------------
@@ -1742,6 +1778,8 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
      * Information about how to format the data written into the <i>MS Office Excel</i> or <i>LibreOffice Calc</i>
      * file.<br>
      * Except for <code>orderBy</code>: That affects also the order of the data written into the summary XML.
+     *
+     * @since 2.5.0
      */
     public static class DataFormatting {
         /**
