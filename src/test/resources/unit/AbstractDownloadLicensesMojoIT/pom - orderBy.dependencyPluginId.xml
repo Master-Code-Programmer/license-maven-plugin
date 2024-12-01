@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- This pom.xml is needed even when it's not directly used.
-      Because the default Line-Ending (EOL = End-Of-Line)
-      will be detected by the "pom.xml"s content. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -116,7 +113,7 @@
           <!-- New -->
           <dataFormatting>
             <!--                        <orderBy>licenseName</orderBy>-->
-            <orderBy>dependencyName</orderBy>
+            <orderBy>dependencyPluginId</orderBy>
             <!--
              TODO: Is this needed? "Highlight" without this will just be:
                     It's standard black!

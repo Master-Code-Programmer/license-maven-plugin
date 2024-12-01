@@ -105,8 +105,10 @@ public class CalcFileWriter {
 
     private CalcFileWriter() {}
 
-    public static void write(List<ProjectLicenseInfo> projectLicenseInfos, final File licensesCalcOutputFile,
-                             AbstractDownloadLicensesMojo.DataFormatting dataFormatting) {
+    public static void write(
+            List<ProjectLicenseInfo> projectLicenseInfos,
+            final File licensesCalcOutputFile,
+            AbstractDownloadLicensesMojo.DataFormatting dataFormatting) {
         if (CollectionUtils.isEmpty(projectLicenseInfos)) {
             LOG.debug("Nothing to write to excel, no project data.");
             return;
@@ -128,8 +130,11 @@ public class CalcFileWriter {
             createHeader(projectLicenseInfos, spreadsheet, table);
 
             writeData(
-                    projectLicenseInfos, spreadsheet, table, convertToOdfColor(SpreadsheetUtil.ALTERNATING_ROWS_COLOR),
-                dataFormatting);
+                    projectLicenseInfos,
+                    spreadsheet,
+                    table,
+                    convertToOdfColor(SpreadsheetUtil.ALTERNATING_ROWS_COLOR),
+                    dataFormatting);
 
             try (OutputStream fileOut = Files.newOutputStream(licensesCalcOutputFile.toPath())) {
                 spreadsheet.save(fileOut);
@@ -559,27 +564,27 @@ public class CalcFileWriter {
                 if (!dataFormatting.skipDevelopers) {
                     currentRowData = new CurrentRowData(currentRowIndex, extraRows, hasExtendedInfo);
                     extraRows = addList(
-                        cellListParameter,
-                        currentRowData,
-                        DEVELOPERS_START_COLUMN,
-                        DEVELOPERS_COLUMNS,
-                        extendedInfo.getDevelopers(),
-                        (OdfTableRow developerRow, Developer developer) -> {
-                            OdfTableCell[] licenses = createDataCellsInRow(
-                                developerRow,
-                                DEVELOPERS_START_COLUMN,
-                                cellStyle,
-                                developer.getId(),
-                                developer.getEmail(),
-                                developer.getName(),
-                                developer.getOrganization(),
-                                developer.getOrganizationUrl(),
-                                developer.getUrl(),
-                                developer.getTimezone());
-                            addHyperlinkIfExists(table, licenses[1], hyperlinkStyle, true);
-                            addHyperlinkIfExists(table, licenses[4], hyperlinkStyle);
-                            addHyperlinkIfExists(table, licenses[5], hyperlinkStyle);
-                        });
+                            cellListParameter,
+                            currentRowData,
+                            DEVELOPERS_START_COLUMN,
+                            DEVELOPERS_COLUMNS,
+                            extendedInfo.getDevelopers(),
+                            (OdfTableRow developerRow, Developer developer) -> {
+                                OdfTableCell[] licenses = createDataCellsInRow(
+                                        developerRow,
+                                        DEVELOPERS_START_COLUMN,
+                                        cellStyle,
+                                        developer.getId(),
+                                        developer.getEmail(),
+                                        developer.getName(),
+                                        developer.getOrganization(),
+                                        developer.getOrganizationUrl(),
+                                        developer.getUrl(),
+                                        developer.getTimezone());
+                                addHyperlinkIfExists(table, licenses[1], hyperlinkStyle, true);
+                                addHyperlinkIfExists(table, licenses[4], hyperlinkStyle);
+                                addHyperlinkIfExists(table, licenses[5], hyperlinkStyle);
+                            });
                 }
                 // Miscellaneous
                 OdfTableCell[] miscCells = createDataCellsInRow(
