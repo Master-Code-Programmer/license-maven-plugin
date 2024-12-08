@@ -29,6 +29,21 @@ mvn verify site -DperformRelease scm-publish:publish-scm
 mvn clean verify -Prun-its
 ```
 
+## List dependencies
+
+```bash
+mvn dependency:tree -l dependencies.txt
+```
+
+Show with Windows:
+```bash
+start dependencies.txt
+```
+Show with Linux:
+```bash
+gopen dependencies.txt
+```
+
 ## How to configure the extended Excel report
 
 The projects `pom.xml` must have the lines marked with "`<!-- New -->`" to use the new options (`extendedInfo`

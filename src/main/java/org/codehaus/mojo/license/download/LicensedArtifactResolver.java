@@ -222,7 +222,7 @@ public class LicensedArtifactResolver {
             for (String licenseMerge : licenseMerges) {
                 String[] splited = StringToList.trimmedStringSplit(licenseMerge);
                 for (String split : splited) {
-                    // Map other occurrences to first occurence.
+                    // Map other occurrences to first occurrence.
                     mergedLicenses.put(split, splited[0]);
                 }
             }

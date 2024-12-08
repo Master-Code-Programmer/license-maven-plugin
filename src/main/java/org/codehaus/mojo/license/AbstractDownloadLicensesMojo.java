@@ -810,6 +810,7 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
      *         |Apache License, version 2.0
      *         |Apache Public License 2.0
      *         |Apache-2.0
+     *         |The Apache License, Version 2.0
      *         |The Apache Software License, Version 2.0
      *     </licenseMerge>
      *     <licenseMerge>EDL 1.0
@@ -1076,7 +1077,7 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
             ExcelFileWriter.write(depProjectLicenses, excelOutputFile, dataFormatting, excludedLicenses);
         }
         if (writeCalcFile) {
-            CalcFileWriter.write(depProjectLicenses, calcOutputFile, dataFormatting);
+            CalcFileWriter.write(depProjectLicenses, calcOutputFile, dataFormatting, excludedLicenses);
         }
     }
 
@@ -1136,10 +1137,7 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
             case dependencyName:
                 return compareDependenciesByName(li1, li2);
             case dependencyPluginId:
-                return IntStream.of(
-                                li1.getGroupId().compareTo(li2.getGroupId()),
-                                li1.getArtifactId().compareTo(li2.getArtifactId()),
-                                li1.getVersion().compareTo(li2.getVersion()))
+                return pluginIdCompareStream(li1, li2)
                         .filter(i -> i != 0)
                         .findFirst()
                         .orElse(0);
@@ -1159,21 +1157,25 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
                 "Implement missing switch case " + dataFormatting.orderBy + " for DataFormatting OrderBy");
     }
 
+    private static IntStream pluginIdCompareStream(ProjectLicenseInfo li1, ProjectLicenseInfo li2) {
+        return IntStream.of(
+            li1.getGroupId().compareTo(li2.getGroupId()),
+            li1.getArtifactId().compareTo(li2.getArtifactId()),
+            li1.getVersion().compareTo(li2.getVersion()));
+    }
+
     private static int compareDependenciesByName(ProjectLicenseInfo li1, ProjectLicenseInfo li2) {
         Comparator<ProjectLicenseInfo> projectNameComparison = Comparator.comparing(
-                li -> Optional.ofNullable(li.getExtendedInfo())
-                        .map(ExtendedInfo::getName)
-                        .orElse(null),
-                Comparator.nullsLast(String::compareToIgnoreCase));
+            li -> Optional.ofNullable(li.getExtendedInfo())
+                .map(ExtendedInfo::getName)
+                .orElse(null),
+            Comparator.nullsLast(String::compareToIgnoreCase));
 
-        return IntStream.of(
-                        projectNameComparison.compare(li1, li2),
-                        li1.getGroupId().compareTo(li2.getGroupId()),
-                        li1.getArtifactId().compareTo(li2.getArtifactId()),
-                        li1.getVersion().compareTo(li2.getVersion()))
-                .filter(i -> i != 0)
-                .findFirst()
-                .orElse(0);
+        return IntStream.concat(IntStream.of(projectNameComparison.compare(li1, li2)),
+                pluginIdCompareStream(li1, li2))
+            .filter(i -> i != 0)
+            .findFirst()
+            .orElse(0);
     }
 
     private static int compareLicensesByName(ProjectLicenseInfo li1, ProjectLicenseInfo li2) {

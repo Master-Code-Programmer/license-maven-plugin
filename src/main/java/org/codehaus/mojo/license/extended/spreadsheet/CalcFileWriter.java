@@ -22,7 +22,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.model.Developer;
 import org.apache.maven.model.Organization;
 import org.apache.maven.model.Scm;
-import org.codehaus.mojo.license.AbstractDownloadLicensesMojo;
+import org.codehaus.mojo.license.AbstractAddThirdPartyMojo;
+import org.codehaus.mojo.license.AbstractDownloadLicensesMojo.DataFormatting;
 import org.codehaus.mojo.license.download.ProjectLicense;
 import org.codehaus.mojo.license.download.ProjectLicenseInfo;
 import org.codehaus.mojo.license.extended.ExtendedInfo;
@@ -99,16 +100,31 @@ public class CalcFileWriter {
     private static final String HYPERLINK_GRAY_STYLE = "hyperlinkGrayStyle";
     private static final String GRAY_CELL_STYLE = "grayCellStyle";
     private static final String NORMAL_CELL_STYLE = "normalCellStyle";
+
+    private static final String UNKNOWN_NORMAL_CELL_STYLE = "unknownNormalCellStyle";
+    private static final String UNKNOWN_GRAY_CELL_STYLE = "unknownGrayCellStyle";
+
+    private static final String FORBIDDEN_NORMAL_CELL_STYLE = "forbiddenNormalCellStyle";
+    private static final String FORBIDDEN_GRAY_CELL_STYLE = "forbiddenGrayCellStyle";
+
+    private static final String PROBLEMATIC_NORMAL_CELL_STYLE = "problematicNormalCellStyle";
+    private static final String PROBLEMATIC_GRAY_CELL_STYLE = "problematicGrayCellStyle";
+
+    private static final String OK_NORMAL_CELL_STYLE = "okNormalCellStyle";
+    private static final String OK_GRAY_CELL_STYLE = "okGrayCellStyle";
+
     private static final int DOWNLOAD_COLUMN_WIDTH = 6_000;
     private static final String VALUE_TYPE_STRING = "string";
     private static final String CONFIG_TYPE_SHORT = "short";
 
-    private CalcFileWriter() {}
+    private CalcFileWriter() {
+    }
 
     public static void write(
-            List<ProjectLicenseInfo> projectLicenseInfos,
-            final File licensesCalcOutputFile,
-            AbstractDownloadLicensesMojo.DataFormatting dataFormatting) {
+        List<ProjectLicenseInfo> projectLicenseInfos,
+        final File licensesCalcOutputFile,
+        DataFormatting dataFormatting,
+        AbstractAddThirdPartyMojo.ExcludedLicenses excludedLicenses) {
         if (CollectionUtils.isEmpty(projectLicenseInfos)) {
             LOG.debug("Nothing to write to excel, no project data.");
             return;
@@ -130,11 +146,11 @@ public class CalcFileWriter {
             createHeader(projectLicenseInfos, spreadsheet, table);
 
             writeData(
-                    projectLicenseInfos,
-                    spreadsheet,
-                    table,
-                    convertToOdfColor(SpreadsheetUtil.ALTERNATING_ROWS_COLOR),
-                    dataFormatting);
+                projectLicenseInfos,
+                spreadsheet,
+                table,
+                convertToOdfColor(SpreadsheetUtil.ALTERNATING_ROWS_COLOR),
+                dataFormatting, excludedLicenses);
 
             try (OutputStream fileOut = Files.newOutputStream(licensesCalcOutputFile.toPath())) {
                 spreadsheet.save(fileOut);
@@ -153,7 +169,7 @@ public class CalcFileWriter {
 
     @SuppressWarnings("checkstyle:MethodLength")
     private static void createHeader(
-            List<ProjectLicenseInfo> projectLicenseInfos, OdfSpreadsheetDocument spreadsheet, OdfTable table) {
+        List<ProjectLicenseInfo> projectLicenseInfos, OdfSpreadsheetDocument spreadsheet, OdfTable table) {
         boolean hasExtendedInfo = false;
         for (ProjectLicenseInfo projectLicenseInfo : projectLicenseInfos) {
             if (projectLicenseInfo.getExtendedInfo() != null) {
@@ -178,109 +194,109 @@ public class CalcFileWriter {
 
         // Create Maven header cell
         createMergedCellsInRow(
-                table, MAVEN_START_COLUMN, MAVEN_END_COLUMN, mavenJarRow, "Maven information", 0, HEADER_CELL_STYLE);
+            table, MAVEN_START_COLUMN, MAVEN_END_COLUMN, mavenJarRow, "Maven information", 0, HEADER_CELL_STYLE);
 
         if (hasExtendedInfo) {
             // Create JAR header cell
             createMergedCellsInRow(
-                    table,
-                    EXTENDED_INFO_START_COLUMN,
-                    EXTENDED_INFO_END_COLUMN,
-                    mavenJarRow,
-                    "JAR Content",
-                    0,
-                    HEADER_CELL_STYLE);
+                table,
+                EXTENDED_INFO_START_COLUMN,
+                EXTENDED_INFO_END_COLUMN,
+                mavenJarRow,
+                "JAR Content",
+                0,
+                HEADER_CELL_STYLE);
         }
 
         // Create Maven "General" header
         createMergedCellsInRow(
-                table, GENERAL_START_COLUMN, GENERAL_END_COLUMN, secondHeaderRow, "General", 1, HEADER_CELL_STYLE);
+            table, GENERAL_START_COLUMN, GENERAL_END_COLUMN, secondHeaderRow, "General", 1, HEADER_CELL_STYLE);
 
         // Create Maven "Plugin ID" header
         createMergedCellsInRow(
-                table,
-                PLUGIN_ID_START_COLUMN,
-                PLUGIN_ID_END_COLUMN,
-                secondHeaderRow,
-                "Plugin ID",
-                1,
-                HEADER_CELL_STYLE);
+            table,
+            PLUGIN_ID_START_COLUMN,
+            PLUGIN_ID_END_COLUMN,
+            secondHeaderRow,
+            "Plugin ID",
+            1,
+            HEADER_CELL_STYLE);
 
         // Gap "General" <-> "Plugin ID".
         setColumnWidth(table, GENERAL_END_COLUMN, GAP_WIDTH);
 
         // Create Maven "Licenses" header
         createMergedCellsInRow(
-                table, LICENSES_START_COLUMN, LICENSES_END_COLUMN, secondHeaderRow, "Licenses", 1, HEADER_CELL_STYLE);
+            table, LICENSES_START_COLUMN, LICENSES_END_COLUMN, secondHeaderRow, "Licenses", 1, HEADER_CELL_STYLE);
 
         // Gap "Plugin ID" <-> "Licenses".
         setColumnWidth(table, PLUGIN_ID_END_COLUMN, GAP_WIDTH);
 
         // Create Maven "Developers" header
         createMergedCellsInRow(
-                table,
-                DEVELOPERS_START_COLUMN,
-                DEVELOPERS_END_COLUMN,
-                secondHeaderRow,
-                "Developers",
-                1,
-                HEADER_CELL_STYLE);
+            table,
+            DEVELOPERS_START_COLUMN,
+            DEVELOPERS_END_COLUMN,
+            secondHeaderRow,
+            "Developers",
+            1,
+            HEADER_CELL_STYLE);
 
         // Gap "Licenses" <-> "Developers".
         setColumnWidth(table, LICENSES_END_COLUMN, GAP_WIDTH);
 
         // Create Maven "Miscellaneous" header
         createMergedCellsInRow(
-                table, MISC_START_COLUMN, MISC_END_COLUMN, secondHeaderRow, "Miscellaneous", 1, HEADER_CELL_STYLE);
+            table, MISC_START_COLUMN, MISC_END_COLUMN, secondHeaderRow, "Miscellaneous", 1, HEADER_CELL_STYLE);
 
         // Gap "Developers" <-> "Miscellaneous".
         setColumnWidth(table, DEVELOPERS_END_COLUMN, GAP_WIDTH);
 
         if (hasExtendedInfo) {
             createMergedCellsInRow(
-                    table,
-                    MANIFEST_START_COLUMN,
-                    MANIFEST_END_COLUMN,
-                    secondHeaderRow,
-                    "MANIFEST.MF",
-                    1,
-                    HEADER_CELL_STYLE);
+                table,
+                MANIFEST_START_COLUMN,
+                MANIFEST_END_COLUMN,
+                secondHeaderRow,
+                "MANIFEST.MF",
+                1,
+                HEADER_CELL_STYLE);
 
             // Gap "Miscellaneous" <-> "MANIFEST.MF".
             setColumnWidth(table, DEVELOPERS_END_COLUMN, GAP_WIDTH);
 
             createMergedCellsInRow(
-                    table,
-                    INFO_NOTICES_START_COLUMN,
-                    INFO_NOTICES_END_COLUMN,
-                    secondHeaderRow,
-                    "Notices text files",
-                    1,
-                    HEADER_CELL_STYLE);
+                table,
+                INFO_NOTICES_START_COLUMN,
+                INFO_NOTICES_END_COLUMN,
+                secondHeaderRow,
+                "Notices text files",
+                1,
+                HEADER_CELL_STYLE);
 
             // Gap "MANIFEST.MF" <-> "Notice text files".
             setColumnWidth(table, MANIFEST_END_COLUMN, GAP_WIDTH);
 
             createMergedCellsInRow(
-                    table,
-                    INFO_LICENSES_START_COLUMN,
-                    INFO_LICENSES_END_COLUMN,
-                    secondHeaderRow,
-                    "License text files",
-                    1,
-                    HEADER_CELL_STYLE);
+                table,
+                INFO_LICENSES_START_COLUMN,
+                INFO_LICENSES_END_COLUMN,
+                secondHeaderRow,
+                "License text files",
+                1,
+                HEADER_CELL_STYLE);
 
             // Gap "Notice text files" <-> "License text files".
             setColumnWidth(table, INFO_NOTICES_END_COLUMN, GAP_WIDTH);
 
             createMergedCellsInRow(
-                    table,
-                    INFO_SPDX_START_COLUMN,
-                    INFO_SPDX_END_COLUMN,
-                    secondHeaderRow,
-                    "SPDX license id matched",
-                    1,
-                    HEADER_CELL_STYLE);
+                table,
+                INFO_SPDX_START_COLUMN,
+                INFO_SPDX_END_COLUMN,
+                secondHeaderRow,
+                "SPDX license id matched",
+                1,
+                HEADER_CELL_STYLE);
 
             // Gap "License text files" <-> "SPDX license matches".
             setColumnWidth(table, INFO_LICENSES_END_COLUMN, GAP_WIDTH);
@@ -294,51 +310,51 @@ public class CalcFileWriter {
         createCellsInRow(thirdHeaderRow, GENERAL_START_COLUMN, HEADER_CELL_STYLE, "Name");
         // Plugin ID
         createCellsInRow(
-                thirdHeaderRow, PLUGIN_ID_START_COLUMN, HEADER_CELL_STYLE, "Group ID", "Artifact ID", "Version");
+            thirdHeaderRow, PLUGIN_ID_START_COLUMN, HEADER_CELL_STYLE, "Group ID", "Artifact ID", "Version");
         // Licenses
         createCellsInRow(
-                thirdHeaderRow,
-                LICENSES_START_COLUMN,
-                HEADER_CELL_STYLE,
-                "Name",
-                "URL",
-                "Distribution",
-                "Comments",
-                "File");
+            thirdHeaderRow,
+            LICENSES_START_COLUMN,
+            HEADER_CELL_STYLE,
+            "Name",
+            "URL",
+            "Distribution",
+            "Comments",
+            "File");
         // Developers
         createCellsInRow(
-                thirdHeaderRow,
-                DEVELOPERS_START_COLUMN,
-                HEADER_CELL_STYLE,
-                "Id",
-                "Email",
-                "Name",
-                "Organization",
-                "Organization URL",
-                "URL",
-                "Timezone");
+            thirdHeaderRow,
+            DEVELOPERS_START_COLUMN,
+            HEADER_CELL_STYLE,
+            "Id",
+            "Email",
+            "Name",
+            "Organization",
+            "Organization URL",
+            "URL",
+            "Timezone");
         // Miscellaneous
         createCellsInRow(
-                thirdHeaderRow, MISC_START_COLUMN, HEADER_CELL_STYLE, "Inception Year", "Organization", "SCM", "URL");
+            thirdHeaderRow, MISC_START_COLUMN, HEADER_CELL_STYLE, "Inception Year", "Organization", "SCM", "URL");
 
         int headerLineCount = 3;
 
         if (hasExtendedInfo) {
             // MANIFEST.MF
             createCellsInRow(
-                    thirdHeaderRow,
-                    MANIFEST_START_COLUMN,
-                    HEADER_CELL_STYLE,
-                    "Bundle license",
-                    "Bundle vendor",
-                    "Implementation vendor");
+                thirdHeaderRow,
+                MANIFEST_START_COLUMN,
+                HEADER_CELL_STYLE,
+                "Bundle license",
+                "Bundle vendor",
+                "Implementation vendor");
             // 3 InfoFile groups: Notices, Licenses and SPDX-Licenses.
             createInfoFileCellsInRow(
-                    thirdHeaderRow,
-                    HEADER_CELL_STYLE,
-                    INFO_NOTICES_START_COLUMN,
-                    INFO_LICENSES_START_COLUMN,
-                    INFO_SPDX_START_COLUMN);
+                thirdHeaderRow,
+                HEADER_CELL_STYLE,
+                INFO_NOTICES_START_COLUMN,
+                INFO_LICENSES_START_COLUMN,
+                INFO_SPDX_START_COLUMN);
 
             createFreezePane(spreadsheet, table, getDownloadColumn(true) - 1, headerLineCount);
         } else {
@@ -350,12 +366,12 @@ public class CalcFileWriter {
 
     private static void setColumnWidth(OdfTable table, int column, int width) {
         table.getColumnByIndex(column)
-                .getOdfElement()
-                .setProperty(OdfTableColumnProperties.ColumnWidth, (width / 100) + "mm");
+            .getOdfElement()
+            .setProperty(OdfTableColumnProperties.ColumnWidth, (width / 100) + "mm");
     }
 
     private static void createFreezePane(
-            OdfSpreadsheetDocument spreadsheet, OdfTable table, int column, int lineCount) {
+        OdfSpreadsheetDocument spreadsheet, OdfTable table, int column, int lineCount) {
         // TODO: Find out why this perfect XML is ignored. Use FreezePane function from ODFToolkit after they add it.
 
         final OdfSettingsDom settingsDom;
@@ -369,13 +385,13 @@ public class CalcFileWriter {
         for (int i = 0; i < childNodes.getLength(); i++) {
             Node child = childNodes.item(i);
             if ("config:config-item-set".equals(child.getNodeName())
-                    && "ooo:view-settings".equals(((Element) child).getAttribute("config:name"))) {
+                && "ooo:view-settings".equals(((Element) child).getAttribute("config:name"))) {
 
                 NodeList subChilds = child.getChildNodes();
                 for (int j = 0; j < subChilds.getLength(); j++) {
                     Node subChild = subChilds.item(j);
                     if ("config:config-item-map-indexed".equals(subChild.getNodeName())
-                            && "Views".equals(((Element) subChild).getAttribute("config:name"))) {
+                        && "Views".equals(((Element) subChild).getAttribute("config:name"))) {
 
                         break;
                     }
@@ -388,15 +404,15 @@ public class CalcFileWriter {
         NodeList list;
         try {
             list = (NodeList) xpath.evaluate(
-                    "/office:document-settings/" + "office:settings/"
-                            + "config:config-item-set/"
-                            + "config:config-item-map-indexed/"
-                            + "config:config-item-map-entry/"
-                            + "config:config-item-map-named/"
-                            + "config:config-item-map-entry",
-                    //                    "/config:config-item-set[@config:name=\"ooo:view-settings\"]" +
-                    settingsDom,
-                    XPathConstants.NODE);
+                "/office:document-settings/" + "office:settings/"
+                    + "config:config-item-set/"
+                    + "config:config-item-map-indexed/"
+                    + "config:config-item-map-entry/"
+                    + "config:config-item-map-named/"
+                    + "config:config-item-map-entry",
+                //                    "/config:config-item-set[@config:name=\"ooo:view-settings\"]" +
+                settingsDom,
+                XPathConstants.NODE);
 
             /*
             <config:config-item config:name="HorizontalSplitMode" config:type="short">2</config:config-item>
@@ -435,7 +451,7 @@ public class CalcFileWriter {
     }
 
     private static void appendConfigItemElement(
-            ConfigConfigItemMapEntryElement entryElement, String configName, String configType, String nodeValue) {
+        ConfigConfigItemMapEntryElement entryElement, String configName, String configType, String nodeValue) {
         ConfigConfigItemElement horizontalSplitMode = null;
         if (entryElement.hasChildNodes()) {
             NodeList nodeList = entryElement.getChildNodes();
@@ -485,11 +501,12 @@ public class CalcFileWriter {
      */
     @SuppressWarnings("checkstyle:MethodLength")
     private static void writeData(
-            List<ProjectLicenseInfo> projectLicenseInfos,
-            OdfSpreadsheetDocument wb,
-            OdfTable table,
-            Color alternatingRowsColor,
-            AbstractDownloadLicensesMojo.DataFormatting dataFormatting) {
+        List<ProjectLicenseInfo> projectLicenseInfos,
+        OdfSpreadsheetDocument wb,
+        OdfTable table,
+        Color alternatingRowsColor,
+        DataFormatting dataFormatting,
+        AbstractAddThirdPartyMojo.ExcludedLicenses excludedLicenses) {
         final int firstRowIndex = 3;
         int currentRowIndex = firstRowIndex;
         final Map<Integer, OdfTableRow> rowMap = new HashMap<>();
@@ -504,6 +521,8 @@ public class CalcFileWriter {
         styleGray.setProperty(StyleTableCellPropertiesElement.BackgroundColor, alternatingRowsColor.toString());
         styleGray.setProperty(OdfTableColumnProperties.UseOptimalColumnWidth, String.valueOf(true));
 
+        createDataFormattingStyles(alternatingRowsColor, officeStyles);
+
         /* Set own, empty style, instead of leaving the style out,
         because otherwise it copies the style of the row above. */
         OdfStyle styleNormal = officeStyles.newStyle(NORMAL_CELL_STYLE, OdfStyleFamily.TableCell);
@@ -512,7 +531,7 @@ public class CalcFileWriter {
         for (ProjectLicenseInfo projectInfo : projectLicenseInfos) {
             final OdfStyle cellStyle, hyperlinkStyle;
             LOG.debug(
-                    "Writing {}:{} into LibreOffice calc file", projectInfo.getGroupId(), projectInfo.getArtifactId());
+                "Writing {}:{} into LibreOffice calc file", projectInfo.getGroupId(), projectInfo.getArtifactId());
             if (grayBackground) {
                 cellStyle = styleGray;
                 hyperlinkStyle = hyperlinkStyleGray;
@@ -520,6 +539,7 @@ public class CalcFileWriter {
                 cellStyle = styleNormal;
                 hyperlinkStyle = hyperlinkStyleNormal;
             }
+            boolean finalGrayBackground = grayBackground;
             grayBackground = !grayBackground;
 
             int extraRows = 0;
@@ -527,33 +547,34 @@ public class CalcFileWriter {
             rowMap.put(currentRowIndex, currentRow);
             // Plugin ID
             createDataCellsInRow(
-                    currentRow,
-                    PLUGIN_ID_START_COLUMN,
-                    cellStyle,
-                    projectInfo.getGroupId(),
-                    projectInfo.getArtifactId(),
-                    projectInfo.getVersion());
+                currentRow,
+                PLUGIN_ID_START_COLUMN,
+                cellStyle,
+                projectInfo.getGroupId(),
+                projectInfo.getArtifactId(),
+                projectInfo.getVersion());
             // Licenses
             final CellListParameter cellListParameter = new CellListParameter(table, rowMap, cellStyle);
             CurrentRowData currentRowData = new CurrentRowData(currentRowIndex, extraRows, hasExtendedInfo);
             extraRows = addList(
-                    cellListParameter,
-                    currentRowData,
-                    LICENSES_START_COLUMN,
-                    LICENSES_COLUMNS,
-                    projectInfo.getLicenses(),
-                    (OdfTableRow licenseRow, ProjectLicense license) -> {
-                        OdfTableCell[] licenses = createDataCellsInRow(
-                                licenseRow,
-                                LICENSES_START_COLUMN,
-                                cellStyle,
-                                license.getName(),
-                                license.getUrl(),
-                                license.getDistribution(),
-                                license.getComments(),
-                                license.getFile());
-                        addHyperlinkIfExists(table, licenses[1], hyperlinkStyle);
-                    });
+                cellListParameter,
+                currentRowData,
+                LICENSES_START_COLUMN,
+                LICENSES_COLUMNS,
+                projectInfo.getLicenses(),
+                (OdfTableRow licenseRow, ProjectLicense license) -> {
+                    OdfTableCell[] licenses = createDataCellsInRow(
+                        licenseRow,
+                        LICENSES_START_COLUMN,
+                        cellStyle,
+                        license.getName(),
+                        license.getUrl(),
+                        license.getDistribution(),
+                        license.getComments(),
+                        license.getFile());
+                    applyDataFormattingToLicense(licenses[0], dataFormatting, excludedLicenses, license, finalGrayBackground);
+                    addHyperlinkIfExists(table, licenses[1], hyperlinkStyle);
+                });
 
             final ExtendedInfo extendedInfo = projectInfo.getExtendedInfo();
             if (extendedInfo != null) {
@@ -564,52 +585,52 @@ public class CalcFileWriter {
                 if (!dataFormatting.skipDevelopers) {
                     currentRowData = new CurrentRowData(currentRowIndex, extraRows, hasExtendedInfo);
                     extraRows = addList(
-                            cellListParameter,
-                            currentRowData,
-                            DEVELOPERS_START_COLUMN,
-                            DEVELOPERS_COLUMNS,
-                            extendedInfo.getDevelopers(),
-                            (OdfTableRow developerRow, Developer developer) -> {
-                                OdfTableCell[] licenses = createDataCellsInRow(
-                                        developerRow,
-                                        DEVELOPERS_START_COLUMN,
-                                        cellStyle,
-                                        developer.getId(),
-                                        developer.getEmail(),
-                                        developer.getName(),
-                                        developer.getOrganization(),
-                                        developer.getOrganizationUrl(),
-                                        developer.getUrl(),
-                                        developer.getTimezone());
-                                addHyperlinkIfExists(table, licenses[1], hyperlinkStyle, true);
-                                addHyperlinkIfExists(table, licenses[4], hyperlinkStyle);
-                                addHyperlinkIfExists(table, licenses[5], hyperlinkStyle);
-                            });
+                        cellListParameter,
+                        currentRowData,
+                        DEVELOPERS_START_COLUMN,
+                        DEVELOPERS_COLUMNS,
+                        extendedInfo.getDevelopers(),
+                        (OdfTableRow developerRow, Developer developer) -> {
+                            OdfTableCell[] licenses = createDataCellsInRow(
+                                developerRow,
+                                DEVELOPERS_START_COLUMN,
+                                cellStyle,
+                                developer.getId(),
+                                developer.getEmail(),
+                                developer.getName(),
+                                developer.getOrganization(),
+                                developer.getOrganizationUrl(),
+                                developer.getUrl(),
+                                developer.getTimezone());
+                            addHyperlinkIfExists(table, licenses[1], hyperlinkStyle, true);
+                            addHyperlinkIfExists(table, licenses[4], hyperlinkStyle);
+                            addHyperlinkIfExists(table, licenses[5], hyperlinkStyle);
+                        });
                 }
                 // Miscellaneous
                 OdfTableCell[] miscCells = createDataCellsInRow(
-                        currentRow,
-                        MISC_START_COLUMN,
-                        cellStyle,
-                        extendedInfo.getInceptionYear(),
-                        Optional.ofNullable(extendedInfo.getOrganization())
-                                .map(Organization::getName)
-                                .orElse(null),
-                        Optional.ofNullable(extendedInfo.getScm())
-                                .map(Scm::getUrl)
-                                .orElse(null),
-                        extendedInfo.getUrl());
+                    currentRow,
+                    MISC_START_COLUMN,
+                    cellStyle,
+                    extendedInfo.getInceptionYear(),
+                    Optional.ofNullable(extendedInfo.getOrganization())
+                        .map(Organization::getName)
+                        .orElse(null),
+                    Optional.ofNullable(extendedInfo.getScm())
+                        .map(Scm::getUrl)
+                        .orElse(null),
+                    extendedInfo.getUrl());
                 addHyperlinkIfExists(table, miscCells[2], hyperlinkStyle);
                 addHyperlinkIfExists(table, miscCells[3], hyperlinkStyle);
 
                 // MANIFEST.MF
                 createDataCellsInRow(
-                        currentRow,
-                        MANIFEST_START_COLUMN,
-                        cellStyle,
-                        extendedInfo.getBundleLicense(),
-                        extendedInfo.getBundleVendor(),
-                        extendedInfo.getImplementationVendor());
+                    currentRow,
+                    MANIFEST_START_COLUMN,
+                    cellStyle,
+                    extendedInfo.getBundleLicense(),
+                    extendedInfo.getBundleVendor(),
+                    extendedInfo.getImplementationVendor());
 
                 // Info files
                 if (!CollectionUtils.isEmpty(extendedInfo.getInfoFiles())) {
@@ -635,28 +656,28 @@ public class CalcFileWriter {
                     // InfoFile notices text file
                     currentRowData = new CurrentRowData(currentRowIndex, extraRows, hasExtendedInfo);
                     extraRows = addInfoFileList(
-                            cellListParameter,
-                            currentRowData,
-                            INFO_NOTICES_START_COLUMN,
-                            INFO_NOTICES_COLUMNS,
-                            notices);
+                        cellListParameter,
+                        currentRowData,
+                        INFO_NOTICES_START_COLUMN,
+                        INFO_NOTICES_COLUMNS,
+                        notices);
                     // InfoFile licenses text file
                     currentRowData = new CurrentRowData(currentRowIndex, extraRows, hasExtendedInfo);
                     extraRows = addInfoFileList(
-                            cellListParameter,
-                            currentRowData,
-                            INFO_LICENSES_START_COLUMN,
-                            INFO_LICENSES_COLUMNS,
-                            licenses);
+                        cellListParameter,
+                        currentRowData,
+                        INFO_LICENSES_START_COLUMN,
+                        INFO_LICENSES_COLUMNS,
+                        licenses);
                     // InfoFile spdx licenses text file
                     currentRowData = new CurrentRowData(currentRowIndex, extraRows, hasExtendedInfo);
                     extraRows = addInfoFileList(
-                            cellListParameter, currentRowData, INFO_SPDX_START_COLUMN, INFO_SPDX_COLUMNS, spdxs);
+                        cellListParameter, currentRowData, INFO_SPDX_START_COLUMN, INFO_SPDX_COLUMNS, spdxs);
                 } else if (cellListParameter.cellStyle != null) {
                     setStyleOnEmptyCells(
-                            cellListParameter, currentRowData, INFO_NOTICES_START_COLUMN, INFO_NOTICES_COLUMNS);
+                        cellListParameter, currentRowData, INFO_NOTICES_START_COLUMN, INFO_NOTICES_COLUMNS);
                     setStyleOnEmptyCells(
-                            cellListParameter, currentRowData, INFO_LICENSES_START_COLUMN, INFO_LICENSES_COLUMNS);
+                        cellListParameter, currentRowData, INFO_LICENSES_START_COLUMN, INFO_LICENSES_COLUMNS);
                     setStyleOnEmptyCells(cellListParameter, currentRowData, INFO_SPDX_START_COLUMN, INFO_SPDX_COLUMNS);
                 }
             } else {
@@ -669,18 +690,18 @@ public class CalcFileWriter {
             if (CollectionUtils.isNotEmpty(projectInfo.getDownloaderMessages())) {
                 currentRowData = new SpreadsheetUtil.CurrentRowData(currentRowIndex, extraRows, hasExtendedInfo);
                 extraRows = addList(
-                        cellListParameter,
-                        currentRowData,
-                        downloadColumn,
-                        SpreadsheetUtil.DOWNLOAD_MESSAGE_COLUMNS,
-                        projectInfo.getDownloaderMessages(),
-                        (OdfTableRow licenseRow, String message) -> {
-                            OdfTableCell[] licenses =
-                                    createDataCellsInRow(licenseRow, downloadColumn, cellStyle, message);
-                            if (message.matches(SpreadsheetUtil.VALID_LINK)) {
-                                addHyperlinkIfExists(table, licenses[0], hyperlinkStyle);
-                            }
-                        });
+                    cellListParameter,
+                    currentRowData,
+                    downloadColumn,
+                    SpreadsheetUtil.DOWNLOAD_MESSAGE_COLUMNS,
+                    projectInfo.getDownloaderMessages(),
+                    (OdfTableRow licenseRow, String message) -> {
+                        OdfTableCell[] licenses =
+                            createDataCellsInRow(licenseRow, downloadColumn, cellStyle, message);
+                        if (message.matches(SpreadsheetUtil.VALID_LINK)) {
+                            addHyperlinkIfExists(table, licenses[0], hyperlinkStyle);
+                        }
+                    });
             } else {
                 // Add empty cell, so it doesn't copy the previous row cell.
                 OdfTableCell cell = currentRow.getCellByIndex(downloadColumn);
@@ -691,6 +712,78 @@ public class CalcFileWriter {
         }
 
         autosizeColumns(table, hasExtendedInfo, currentRowIndex);
+    }
+
+    private static void applyDataFormattingToLicense(OdfTableCell tableCell, DataFormatting dataFormatting,
+                                                     AbstractAddThirdPartyMojo.ExcludedLicenses excludedLicenses,
+                                                     ProjectLicense license, boolean grayBackground) {
+        if (dataFormatting != null && dataFormatting.orderBy != DataFormatting.OrderBy.none) {
+            final LicenseColorStyle licenseColorStyle = LicenseColorStyle.getLicenseColorStyle(license, dataFormatting, excludedLicenses);
+            final String styleName;
+            switch (licenseColorStyle) {
+                case FORBIDDEN:
+                    styleName = grayBackground ? FORBIDDEN_GRAY_CELL_STYLE : FORBIDDEN_NORMAL_CELL_STYLE;
+                    break;
+                case PROBLEMATIC:
+                    styleName = grayBackground ? PROBLEMATIC_GRAY_CELL_STYLE : PROBLEMATIC_NORMAL_CELL_STYLE;
+                    break;
+                case OK:
+                    styleName = grayBackground ? OK_GRAY_CELL_STYLE : OK_NORMAL_CELL_STYLE;
+                    break;
+                case UNKNOWN:
+                    styleName = grayBackground ? UNKNOWN_GRAY_CELL_STYLE : UNKNOWN_NORMAL_CELL_STYLE;
+                    break;
+                case NONE:
+                default:
+                    styleName = null;
+                    break;
+            }
+            if (styleName != null) {
+                tableCell.getOdfElement().setStyleName(styleName);
+            }
+        }
+    }
+
+    private static void createDataFormattingStyles(Color alternatingRowsColor, OdfOfficeStyles officeStyles) {
+        // Unknown
+        OdfStyle unknownNormal = officeStyles.newStyle(UNKNOWN_NORMAL_CELL_STYLE, OdfStyleFamily.TableCell);
+        unknownNormal.setProperty(StyleTextPropertiesElement.Color, convertToOdfColor(SpreadsheetUtil.UNKNOWN_ROWS_COLOR).toString());
+        unknownNormal.setProperty(OdfTableColumnProperties.UseOptimalColumnWidth, String.valueOf(true));
+
+        OdfStyle unknownGray = officeStyles.newStyle(UNKNOWN_GRAY_CELL_STYLE, OdfStyleFamily.TableCell);
+        unknownGray.setProperty(StyleTableCellPropertiesElement.BackgroundColor, alternatingRowsColor.toString());
+        unknownGray.setProperty(StyleTextPropertiesElement.Color, convertToOdfColor(SpreadsheetUtil.UNKNOWN_ROWS_COLOR).toString());
+        unknownGray.setProperty(OdfTableColumnProperties.UseOptimalColumnWidth, String.valueOf(true));
+
+        // Forbidden
+        OdfStyle forbiddenNormal = officeStyles.newStyle(FORBIDDEN_NORMAL_CELL_STYLE, OdfStyleFamily.TableCell);
+        forbiddenNormal.setProperty(StyleTextPropertiesElement.Color, convertToOdfColor(SpreadsheetUtil.FORBIDDEN_ROWS_COLOR).toString());
+        forbiddenNormal.setProperty(OdfTableColumnProperties.UseOptimalColumnWidth, String.valueOf(true));
+
+        OdfStyle forbiddenGray = officeStyles.newStyle(FORBIDDEN_GRAY_CELL_STYLE, OdfStyleFamily.TableCell);
+        forbiddenGray.setProperty(StyleTableCellPropertiesElement.BackgroundColor, alternatingRowsColor.toString());
+        forbiddenGray.setProperty(StyleTextPropertiesElement.Color, convertToOdfColor(SpreadsheetUtil.FORBIDDEN_ROWS_COLOR).toString());
+        forbiddenGray.setProperty(OdfTableColumnProperties.UseOptimalColumnWidth, String.valueOf(true));
+
+        // Problematic
+        OdfStyle problematicNormal = officeStyles.newStyle(PROBLEMATIC_NORMAL_CELL_STYLE, OdfStyleFamily.TableCell);
+        problematicNormal.setProperty(StyleTextPropertiesElement.Color, convertToOdfColor(SpreadsheetUtil.PROBLEMATIC_ROWS_COLOR).toString());
+        problematicNormal.setProperty(OdfTableColumnProperties.UseOptimalColumnWidth, String.valueOf(true));
+
+        OdfStyle problematicNormalGray = officeStyles.newStyle(PROBLEMATIC_GRAY_CELL_STYLE, OdfStyleFamily.TableCell);
+        problematicNormalGray.setProperty(StyleTableCellPropertiesElement.BackgroundColor, alternatingRowsColor.toString());
+        problematicNormalGray.setProperty(StyleTextPropertiesElement.Color, convertToOdfColor(SpreadsheetUtil.PROBLEMATIC_ROWS_COLOR).toString());
+        problematicNormalGray.setProperty(OdfTableColumnProperties.UseOptimalColumnWidth, String.valueOf(true));
+
+        // OK
+        OdfStyle okNormal = officeStyles.newStyle(OK_NORMAL_CELL_STYLE, OdfStyleFamily.TableCell);
+        okNormal.setProperty(StyleTextPropertiesElement.Color, convertToOdfColor(SpreadsheetUtil.OK_ROWS_COLOR).toString());
+        okNormal.setProperty(OdfTableColumnProperties.UseOptimalColumnWidth, String.valueOf(true));
+
+        OdfStyle okGray = officeStyles.newStyle(OK_GRAY_CELL_STYLE, OdfStyleFamily.TableCell);
+        okGray.setProperty(StyleTableCellPropertiesElement.BackgroundColor, alternatingRowsColor.toString());
+        okGray.setProperty(StyleTextPropertiesElement.Color, convertToOdfColor(SpreadsheetUtil.OK_ROWS_COLOR).toString());
+        okGray.setProperty(OdfTableColumnProperties.UseOptimalColumnWidth, String.valueOf(true));
     }
 
     private static OdfStyle createHyperlinkStyle(OdfSpreadsheetDocument wb, String name, Color backgroundColor) {
@@ -710,24 +803,24 @@ public class CalcFileWriter {
 
     private static void autosizeColumns(OdfTable table, boolean hasExtendedInfo, int rows) {
         autosizeColumns(
-                table,
-                rows,
-                new ImmutablePair<>(GENERAL_START_COLUMN, GENERAL_END_COLUMN),
-                new ImmutablePair<>(PLUGIN_ID_START_COLUMN, PLUGIN_ID_END_COLUMN),
-                new ImmutablePair<>(LICENSES_START_COLUMN, LICENSES_END_COLUMN),
-                new ImmutablePair<>(DEVELOPERS_START_COLUMN, DEVELOPERS_END_COLUMN - 1),
-                new ImmutablePair<>(MISC_START_COLUMN + 1, MISC_END_COLUMN));
+            table,
+            rows,
+            new ImmutablePair<>(GENERAL_START_COLUMN, GENERAL_END_COLUMN),
+            new ImmutablePair<>(PLUGIN_ID_START_COLUMN, PLUGIN_ID_END_COLUMN),
+            new ImmutablePair<>(LICENSES_START_COLUMN, LICENSES_END_COLUMN),
+            new ImmutablePair<>(DEVELOPERS_START_COLUMN, DEVELOPERS_END_COLUMN - 1),
+            new ImmutablePair<>(MISC_START_COLUMN + 1, MISC_END_COLUMN));
         // The column header widths are most likely wider than the actual cells content.
         setColumnWidth(table, DEVELOPERS_END_COLUMN - 1, TIMEZONE_WIDTH);
         setColumnWidth(table, MISC_START_COLUMN, INCEPTION_YEAR_WIDTH);
         if (hasExtendedInfo) {
             autosizeColumns(
-                    table,
-                    rows,
-                    new ImmutablePair<>(MANIFEST_START_COLUMN, MANIFEST_END_COLUMN),
-                    new ImmutablePair<>(INFO_NOTICES_START_COLUMN + 2, INFO_NOTICES_END_COLUMN),
-                    new ImmutablePair<>(INFO_LICENSES_START_COLUMN + 2, INFO_LICENSES_END_COLUMN),
-                    new ImmutablePair<>(INFO_SPDX_START_COLUMN + 2, INFO_SPDX_END_COLUMN));
+                table,
+                rows,
+                new ImmutablePair<>(MANIFEST_START_COLUMN, MANIFEST_END_COLUMN),
+                new ImmutablePair<>(INFO_NOTICES_START_COLUMN + 2, INFO_NOTICES_END_COLUMN),
+                new ImmutablePair<>(INFO_LICENSES_START_COLUMN + 2, INFO_LICENSES_END_COLUMN),
+                new ImmutablePair<>(INFO_SPDX_START_COLUMN + 2, INFO_SPDX_END_COLUMN));
         }
     }
 
@@ -755,39 +848,39 @@ public class CalcFileWriter {
     }
 
     private static int addInfoFileList(
-            CellListParameter cellListParameter,
-            CurrentRowData currentRowData,
-            int startColumn,
-            int columnsToFill,
-            List<InfoFile> infoFiles) {
+        CellListParameter cellListParameter,
+        CurrentRowData currentRowData,
+        int startColumn,
+        int columnsToFill,
+        List<InfoFile> infoFiles) {
         return addList(
-                cellListParameter,
-                currentRowData,
-                startColumn,
-                columnsToFill,
-                infoFiles,
-                (OdfTableRow infoFileRow, InfoFile infoFile) -> {
-                    final String copyrightLines = Optional.ofNullable(infoFile.getExtractedCopyrightLines())
-                            .map(strings -> String.join(COPYRIGHT_JOIN_SEPARATOR, strings))
-                            .orElse(null);
-                    createDataCellsInRow(
-                            infoFileRow,
-                            startColumn,
-                            cellListParameter.getCellStyle(),
-                            // This would otherwise lead to invalid XML characters in the ODS file content.
-                            infoFile.getContent().replace("\f", "\n"),
-                            copyrightLines,
-                            infoFile.getFileName());
-                });
+            cellListParameter,
+            currentRowData,
+            startColumn,
+            columnsToFill,
+            infoFiles,
+            (OdfTableRow infoFileRow, InfoFile infoFile) -> {
+                final String copyrightLines = Optional.ofNullable(infoFile.getExtractedCopyrightLines())
+                    .map(strings -> String.join(COPYRIGHT_JOIN_SEPARATOR, strings))
+                    .orElse(null);
+                createDataCellsInRow(
+                    infoFileRow,
+                    startColumn,
+                    cellListParameter.getCellStyle(),
+                    // This would otherwise lead to invalid XML characters in the ODS file content.
+                    infoFile.getContent().replace("\f", "\n"),
+                    copyrightLines,
+                    infoFile.getFileName());
+            });
     }
 
     private static <T> int addList(
-            CellListParameter cellListParameter,
-            CurrentRowData currentRowData,
-            int startColumn,
-            int columnsToFill,
-            List<T> list,
-            BiConsumer<OdfTableRow, T> biConsumer) {
+        CellListParameter cellListParameter,
+        CurrentRowData currentRowData,
+        int startColumn,
+        int columnsToFill,
+        List<T> list,
+        BiConsumer<OdfTableRow, T> biConsumer) {
         if (!CollectionUtils.isEmpty(list)) {
             for (int i = 0; i < list.size(); i++) {
                 T type = list.get(i);
@@ -799,22 +892,22 @@ public class CalcFileWriter {
                     if (cellListParameter.getCellStyle() != null) {
                         // Style all empty left cells, in the columns left from this
                         createAndStyleCells(
-                                row,
-                                cellListParameter.getCellStyle(),
-                                new ImmutablePair<>(GENERAL_START_COLUMN, GENERAL_END_COLUMN),
-                                new ImmutablePair<>(PLUGIN_ID_START_COLUMN, PLUGIN_ID_END_COLUMN),
-                                new ImmutablePair<>(LICENSES_START_COLUMN, LICENSES_END_COLUMN));
+                            row,
+                            cellListParameter.getCellStyle(),
+                            new ImmutablePair<>(GENERAL_START_COLUMN, GENERAL_END_COLUMN),
+                            new ImmutablePair<>(PLUGIN_ID_START_COLUMN, PLUGIN_ID_END_COLUMN),
+                            new ImmutablePair<>(LICENSES_START_COLUMN, LICENSES_END_COLUMN));
                         if (currentRowData.isHasExtendedInfo()) {
                             createAndStyleCells(
-                                    row,
-                                    cellListParameter.getCellStyle(),
-                                    new ImmutablePair<>(DEVELOPERS_START_COLUMN, DEVELOPERS_END_COLUMN),
-                                    new ImmutablePair<>(MISC_START_COLUMN, MISC_END_COLUMN),
-                                    // JAR
-                                    new ImmutablePair<>(MANIFEST_START_COLUMN, MANIFEST_END_COLUMN),
-                                    new ImmutablePair<>(INFO_LICENSES_START_COLUMN, INFO_LICENSES_END_COLUMN),
-                                    new ImmutablePair<>(INFO_NOTICES_START_COLUMN, INFO_NOTICES_END_COLUMN),
-                                    new ImmutablePair<>(INFO_SPDX_START_COLUMN, INFO_SPDX_END_COLUMN));
+                                row,
+                                cellListParameter.getCellStyle(),
+                                new ImmutablePair<>(DEVELOPERS_START_COLUMN, DEVELOPERS_END_COLUMN),
+                                new ImmutablePair<>(MISC_START_COLUMN, MISC_END_COLUMN),
+                                // JAR
+                                new ImmutablePair<>(MANIFEST_START_COLUMN, MANIFEST_END_COLUMN),
+                                new ImmutablePair<>(INFO_LICENSES_START_COLUMN, INFO_LICENSES_END_COLUMN),
+                                new ImmutablePair<>(INFO_NOTICES_START_COLUMN, INFO_NOTICES_END_COLUMN),
+                                new ImmutablePair<>(INFO_SPDX_START_COLUMN, INFO_SPDX_END_COLUMN));
                         }
                     }
                     currentRowData.setExtraRows(currentRowData.getExtraRows() + 1);
@@ -837,7 +930,7 @@ public class CalcFileWriter {
      * @param columnsToFill     How many columns to set the style on, starting from 'startColumn'.
      */
     private static void setStyleOnEmptyCells(
-            CellListParameter cellListParameter, CurrentRowData currentRowData, int startColumn, int columnsToFill) {
+        CellListParameter cellListParameter, CurrentRowData currentRowData, int startColumn, int columnsToFill) {
         OdfTableRow row = cellListParameter.getRows().get(currentRowData.getCurrentRowIndex());
         for (int i = 0; i < columnsToFill; i++) {
             OdfTableCell cell = row.getCellByIndex(startColumn + i);
@@ -881,7 +974,7 @@ public class CalcFileWriter {
     }
 
     private static void addHyperlinkIfExists(
-            OdfTable table, OdfTableCell cell, OdfStyle hyperlinkStyle, boolean isEmail) {
+        OdfTable table, OdfTableCell cell, OdfStyle hyperlinkStyle, boolean isEmail) {
         if (!StringUtils.isEmpty(cell.getStringValue())) {
             try {
                 cell.getOdfElement().setStyleName(getCellStyleName(hyperlinkStyle));
@@ -892,7 +985,7 @@ public class CalcFileWriter {
                 applyHyperlink(table, cell, content, isEmail);
             } catch (IllegalArgumentException e) {
                 LOG.debug(
-                        "Can't set Hyperlink for cell value " + cell.getStringValue() + " it gets rejected as URI", e);
+                    "Can't set Hyperlink for cell value " + cell.getStringValue() + " it gets rejected as URI", e);
             }
         }
     }
@@ -907,7 +1000,7 @@ public class CalcFileWriter {
      * @return Array of created table cells.
      */
     private static OdfTableCell[] createDataCellsInRow(
-            OdfTableRow row, int startColumn, OdfStyle cellStyle, String... names) {
+        OdfTableRow row, int startColumn, OdfStyle cellStyle, String... names) {
         OdfTableCell[] result = new OdfTableCell[names.length];
         for (int i = 0; i < names.length; i++) {
             OdfTableCell cell = row.getCellByIndex(startColumn + i);
@@ -977,13 +1070,13 @@ public class CalcFileWriter {
     }
 
     private static void createMergedCellsInRow(
-            OdfTable table,
-            int startColumn,
-            int endColumn,
-            OdfTableRow row,
-            String cellValue,
-            int rowIndex,
-            String styleName) {
+        OdfTable table,
+        int startColumn,
+        int endColumn,
+        OdfTableRow row,
+        String cellValue,
+        int rowIndex,
+        String styleName) {
         OdfTableCell cell = createCellsInRow(startColumn, endColumn, row);
         if (cell == null) {
             return;

@@ -103,8 +103,8 @@
           <writeCalcFile>true</writeCalcFile>
           <writeExcelFile>true</writeExcelFile>
 
-          <licensesCalcOutputFile>target/generated-resources/licenses - orderByDependencyName.ods</licensesCalcOutputFile>
-          <licensesExcelOutputFile>target/generated-resources/licenses - orderByDependencyName.xlsx</licensesExcelOutputFile>
+          <licensesCalcOutputFile>target/generated-resources/licenses - orderByLicenseMatch.ods</licensesCalcOutputFile>
+          <licensesExcelOutputFile>target/generated-resources/licenses - orderByLicenseMatch.xlsx</licensesExcelOutputFile>
 
           <excludedLicenses>
             <excludedLicense>GNU General Lesser Public License (LGPL) version 3.0</excludedLicense>
@@ -113,7 +113,7 @@
           <failOnBlacklist>true</failOnBlacklist>
 
           <dataFormatting>
-            <orderBy>dependencyName</orderBy>
+            <orderBy>licenseMatch</orderBy>
             <problematicLicenses>
               <problematicLicense>EPL 2.0</problematicLicense>
               <problematicLicense>GPL2 w/ CPE</problematicLicense>
