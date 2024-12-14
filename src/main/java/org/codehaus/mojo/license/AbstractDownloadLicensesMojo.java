@@ -1159,23 +1159,22 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
 
     private static IntStream pluginIdCompareStream(ProjectLicenseInfo li1, ProjectLicenseInfo li2) {
         return IntStream.of(
-            li1.getGroupId().compareTo(li2.getGroupId()),
-            li1.getArtifactId().compareTo(li2.getArtifactId()),
-            li1.getVersion().compareTo(li2.getVersion()));
+                li1.getGroupId().compareTo(li2.getGroupId()),
+                li1.getArtifactId().compareTo(li2.getArtifactId()),
+                li1.getVersion().compareTo(li2.getVersion()));
     }
 
     private static int compareDependenciesByName(ProjectLicenseInfo li1, ProjectLicenseInfo li2) {
         Comparator<ProjectLicenseInfo> projectNameComparison = Comparator.comparing(
-            li -> Optional.ofNullable(li.getExtendedInfo())
-                .map(ExtendedInfo::getName)
-                .orElse(null),
-            Comparator.nullsLast(String::compareToIgnoreCase));
+                li -> Optional.ofNullable(li.getExtendedInfo())
+                        .map(ExtendedInfo::getName)
+                        .orElse(null),
+                Comparator.nullsLast(String::compareToIgnoreCase));
 
-        return IntStream.concat(IntStream.of(projectNameComparison.compare(li1, li2)),
-                pluginIdCompareStream(li1, li2))
-            .filter(i -> i != 0)
-            .findFirst()
-            .orElse(0);
+        return IntStream.concat(IntStream.of(projectNameComparison.compare(li1, li2)), pluginIdCompareStream(li1, li2))
+                .filter(i -> i != 0)
+                .findFirst()
+                .orElse(0);
     }
 
     private static int compareLicensesByName(ProjectLicenseInfo li1, ProjectLicenseInfo li2) {
@@ -1871,14 +1870,13 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
 
         @Override
         public String toString() {
-            return "DataFormatting{" +
-                "orderBy=" + orderBy +
-                ", highlightUnknownLicenses=" + highlightUnknownLicenses +
-                ", problematicLicenses=" + problematicLicenses +
-                ", okLicenses=" + okLicenses +
-                ", matchedLicensesHaveBorder=" + matchedLicensesHaveBorder +
-                ", skipDevelopers=" + skipDevelopers +
-                '}';
+            return "DataFormatting{" + "orderBy="
+                    + orderBy + ", highlightUnknownLicenses="
+                    + highlightUnknownLicenses + ", problematicLicenses="
+                    + problematicLicenses + ", okLicenses="
+                    + okLicenses + ", matchedLicensesHaveBorder="
+                    + matchedLicensesHaveBorder + ", skipDevelopers="
+                    + skipDevelopers + '}';
         }
     }
 }

@@ -1,5 +1,30 @@
 package org.codehaus.mojo.license.download;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.Policy;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.stream.Collectors;
+
 import org.apache.maven.DefaultMaven;
 import org.apache.maven.Maven;
 import org.apache.maven.execution.DefaultMavenExecutionRequest;
@@ -20,29 +45,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.Policy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Properties;
 
 @RunWith(Parameterized.class)
 public class DownloadLicensesIT extends AbstractMojoTestCase {
@@ -112,13 +114,12 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
 
         @Override
         public String toString() {
-            return "DependencyInfo{" +
-                "name='" + name + '\'' +
-                ", groupId='" + groupId + '\'' +
-                ", artifactId='" + artifactId + '\'' +
-                ", version='" + version + '\'' +
-                ", license='" + license + '\'' +
-                '}';
+            return "DependencyInfo{" + "name='"
+                + name + '\'' + ", groupId='"
+                + groupId + '\'' + ", artifactId='"
+                + artifactId + '\'' + ", version='"
+                + version + '\'' + ", license='"
+                + license + '\'' + '}';
         }
     }
 
@@ -155,10 +156,10 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
 
         return Arrays.asList(
             new Parameter(dataFormatting1, "pom - orderBy.dependencyName.xml", "sortedByDependencyName.xml"),
-            new Parameter(dataFormatting2, "pom - orderBy.dependencyPluginId.xml", "sortedByDependencyPluginId.xml"),
+            new Parameter(
+                dataFormatting2, "pom - orderBy.dependencyPluginId.xml", "sortedByDependencyPluginId.xml"),
             new Parameter(dataFormatting3, "pom - orderBy.licenseMatch.xml", "sortedByLicenseMatch.xml"),
-            new Parameter(dataFormatting4, "pom - orderBy.licenseName.xml", "sortedByLicenseName.xml")
-        );
+            new Parameter(dataFormatting4, "pom - orderBy.licenseName.xml", "sortedByLicenseName.xml"));
     }
 
     public DownloadLicensesIT(Parameter parameter) {
@@ -204,15 +205,17 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
                 System.out.println("Error in executing \"testDownloadLicenses\"\n" + exception + "\n"
                     + Arrays.toString(exception.getStackTrace()));
             }
-            assertTrue("Exceptions during Maven execution", executed.getExceptions().isEmpty());
+            assertEquals(1, executed.getExceptions().size());
+            assertTrue(executed.getExceptions()
+                .get(0).getMessage().contains("1 unique forbidden licenses found"));
         }
 
         checkResultingLicensesXml();
     }
 
-    private void checkResultingLicensesXml() throws ParserConfigurationException, SAXException, IOException, JAXBException {
-        Path testPath = Paths.get(getBasedir(),
-            "src/test/resources/unit/AbstractDownloadLicensesMojoIT");
+    private void checkResultingLicensesXml()
+        throws ParserConfigurationException, SAXException, IOException, JAXBException {
+        Path testPath = Paths.get(getBasedir(), "src/test/resources/unit/AbstractDownloadLicensesMojoIT");
         Path generatedResourcesPath = Paths.get(testPath.toString(), "target/generated-resources");
         Path licensesPath = Paths.get(generatedResourcesPath.toString(), "licenses.xml");
 
@@ -253,7 +256,8 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
                             Node licenseNode = licensesNode.getChildNodes().item(k);
                             if (licenseNode.getNodeName().equals("license")) {
                                 for (int l = 0; l < licenseNode.getChildNodes().getLength(); l++) {
-                                    Node licenseChild = licenseNode.getChildNodes().item(l);
+                                    Node licenseChild =
+                                        licenseNode.getChildNodes().item(l);
                                     if (licenseChild.getNodeName().equals("name")) {
                                         licenses.add(licenseChild.getTextContent());
                                     }
@@ -273,31 +277,40 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
                 if (name == null) {
                     System.out.println("Dependency without name: " + groupId + ":" + artifactId + ":" + version);
                 }
-                System.out.println("Dependency: " + name + " (" + groupId + ":" + artifactId + ":" + version + ") - " + license);
+                System.out.println(
+                    "Dependency: " + name + " (" + groupId + ":" + artifactId + ":" + version + ") - " + license);
             }
         }
 
         /*
-         Comment this line in, if there have been changes in the data sorting and new files to check against, must be
-         created.
-         */
+        Comment this line in, if there have been changes in the data sorting and new files to check against, must be
+        created.
+        */
         // saveDependencyInfos(dependencyInfos);
 
         Path testResourcesPath = Paths.get(testPath.toString(), "src/test/resources");
         Path expectedPath = Paths.get(testResourcesPath.toString(), parameter.expected);
 
         JAXBContext jaxbSerializer = createJaxbSerializer();
-        DependencyInfos expectedDependencyInfos = (DependencyInfos) jaxbSerializer.createUnmarshaller()
-            .unmarshal(expectedPath.toFile());
+        DependencyInfos expectedDependencyInfos =
+            (DependencyInfos) jaxbSerializer.createUnmarshaller().unmarshal(expectedPath.toFile());
 
-        assertEquals(expectedDependencyInfos.dependencyInfos.size(), dependencyInfos.size());
+        assertEquals(
+            expectedDependencyInfos.dependencyInfos.stream().map(Object::toString)
+                .collect(Collectors.joining("\n"))
+                + "\n != \n"
+                + dependencyInfos.stream().map(Object::toString)
+                .collect(Collectors.joining("\n")),
+            expectedDependencyInfos.dependencyInfos.size(), dependencyInfos.size());
 
         for (int i = 0; i < dependencyInfos.size(); i++) {
             DependencyInfo expectedDependencyInfo = expectedDependencyInfos.dependencyInfos.get(i);
             DependencyInfo actualDependencyInfo = dependencyInfos.get(i);
 
-            assertEquals("Expected: " + expectedDependencyInfo.name + ", Sorted: " + actualDependencyInfo.name,
-                expectedDependencyInfo, actualDependencyInfo);
+            assertEquals(
+                "Expected: " + expectedDependencyInfo.name + ", Sorted: " + actualDependencyInfo.name,
+                expectedDependencyInfo,
+                actualDependencyInfo);
         }
     }
 
