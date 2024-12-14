@@ -30,14 +30,14 @@ enum LicenseColorStyle {
     NONE;
 
     static LicenseColorStyle getLicenseColorStyle(
-        ProjectLicense license,
-        AbstractDownloadLicensesMojo.DataFormatting dataFormatting,
-        AbstractAddThirdPartyMojo.ExcludedLicenses excludedLicenses) {
+            ProjectLicense license,
+            AbstractDownloadLicensesMojo.DataFormatting dataFormatting,
+            AbstractAddThirdPartyMojo.ExcludedLicenses excludedLicenses) {
         final LicenseColorStyle licenseColorStyle;
         if (excludedLicenses != null && excludedLicenses.contains(license.getName())) {
             licenseColorStyle = LicenseColorStyle.FORBIDDEN;
         } else if (dataFormatting.problematicLicenses != null
-            && dataFormatting.problematicLicenses.contains(license.getName())) {
+                && dataFormatting.problematicLicenses.contains(license.getName())) {
             licenseColorStyle = LicenseColorStyle.PROBLEMATIC;
         } else if (dataFormatting.okLicenses != null && dataFormatting.okLicenses.contains(license.getName())) {
             licenseColorStyle = LicenseColorStyle.OK;

@@ -36,10 +36,13 @@ mvn dependency:tree -l dependencies.txt
 ```
 
 Show with Windows:
+
 ```bash
 start dependencies.txt
 ```
+
 Show with Linux:
+
 ```bash
 gopen dependencies.txt
 ```
