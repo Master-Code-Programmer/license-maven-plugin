@@ -361,6 +361,13 @@
       <!--      <version>3.9.8</version>-->
       <scope>test</scope>
     </dependency>
+
+<!--    <dependency>-->
+<!--      <groupId>org.mockito</groupId>-->
+<!--      <artifactId>mockito-core</artifactId>-->
+<!--      <version>5.14.2</version>-->
+<!--      <scope>test</scope>-->
+<!--    </dependency>-->
     <!--    <dependency>-->
     <!--      <groupId>org.apache.maven</groupId>-->
     <!--      <artifactId>maven-core</artifactId>-->
@@ -459,6 +466,17 @@
         </executions>
       </plugin>
 
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>3.4.0</version>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>src/test/resources/unit/AbstractDownloadLicensesMojoIT/target</directory>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
@@ -606,6 +624,38 @@
           </plugin>
         </plugins>
       </reporting>
+    </profile>
+    <profile>
+      <id>java11+</id>
+      <activation>
+        <jdk>[11,)</jdk>
+      </activation>
+
+      <!-- In JDK 9, the JAXB classes have been removed from the default JDK module. -->
+      <dependencies>
+        <!-- API, java.xml.bind module -->
+        <dependency>
+          <groupId>jakarta.xml.bind</groupId>
+          <artifactId>jakarta.xml.bind-api</artifactId>
+          <version>2.3.3</version>
+          <scope>test</scope>
+        </dependency>
+        <!-- Runtime, com.sun.xml.bind module -->
+        <dependency>
+          <groupId>org.glassfish.jaxb</groupId>
+          <artifactId>jaxb-runtime</artifactId>
+          <version>2.3.9</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>

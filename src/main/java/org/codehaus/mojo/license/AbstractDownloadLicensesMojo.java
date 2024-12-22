@@ -1487,7 +1487,8 @@ public abstract class AbstractDownloadLicensesMojo extends AbstractLicensesXmlMo
      */
     protected Path[] getAutodetectEolFiles() {
         return new Path[] {
-            licensesConfigFile.toPath(), project.getBasedir().toPath().resolve("pom.xml")
+            // TODO: Find out why "project.getFile()" wasn't always directly used.
+            project.getFile().toPath()
         };
     }
 

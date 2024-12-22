@@ -12,7 +12,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Policy;
@@ -24,11 +23,22 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.apache.maven.execution.DefaultMavenExecutionRequest;
 import org.apache.maven.execution.MavenExecutionRequest;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.Mojo;
+import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.plugin.testing.MojoRule;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectBuilder;
+import org.apache.maven.project.ProjectBuildingException;
+import org.apache.maven.project.ProjectBuildingRequest;
 import org.codehaus.mojo.license.AbstractDownloadLicensesMojo;
 import org.codehaus.mojo.license.AggregateDownloadLicensesMojo;
+import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -164,6 +174,40 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
         this.parameter = parameter;
     }
 
+    public static class MojoResult {
+        private final Mojo mojo;
+        private final ProjectBuilder projectBuilder;
+        private final MavenProject project;
+        private final MavenSession session;
+
+        MojoResult(Mojo mojo, ProjectBuilder projectBuilder, MavenProject project, MavenSession session) {
+            this.mojo = mojo;
+            this.projectBuilder = projectBuilder;
+            this.project = project;
+            this.session = session;
+        }
+    }
+
+    public MojoResult lookupConfiguredMojo(File pom, String goal) throws Exception {
+        MavenProjectInfo projectInfo = readMavenProject(pom);
+        MavenProject project = projectInfo.project;
+        MavenSession session = newMavenSession(project);
+        MojoExecution execution = newMojoExecution(goal);
+        Mojo mojo = lookupConfiguredMojo(session, execution);
+        return new MojoResult(mojo, projectInfo.projectBuilder, project, session);
+    }
+
+    public MavenProjectInfo readMavenProject(File pom) throws ComponentLookupException, ProjectBuildingException {
+        MavenExecutionRequest request = new DefaultMavenExecutionRequest();
+        request.setBaseDirectory(pom.toPath().getParent().toFile());
+        ProjectBuildingRequest configuration = request.getProjectBuildingRequest();
+        configuration.setRepositorySession(new DefaultRepositorySystemSession());
+        ProjectBuilder projectBuilder = lookup(ProjectBuilder.class);
+        MavenProject project = projectBuilder.build(pom, configuration).getProject();
+        Assert.assertNotNull(project);
+        return new MavenProjectInfo(projectBuilder, project);
+    }
+
     /**
      * Tests if all licenses are correctly formatted.
      *
@@ -177,42 +221,22 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
         assertNotNull(pom);
         assertTrue(pom.exists());
 
-        AggregateDownloadLicensesMojo downloadLicensesMojo =
-                (AggregateDownloadLicensesMojo) mojoRule.lookupConfiguredMojo(
-                        getTestFile("src/test/resources/unit/AbstractDownloadLicensesMojoIT/"),
-                        AggregateDownloadLicensesMojo.GOAL);
-        downloadLicensesMojo.execute();
+        MojoResult mojoResult = lookupConfiguredMojo(pom, AggregateDownloadLicensesMojo.GOAL);
+        AggregateDownloadLicensesMojo downloadLicensesMojo = (AggregateDownloadLicensesMojo) mojoResult.mojo;
+        mojoResult.project.setExecutionRoot(true);
 
-        checkResultingLicensesXml();
-    }
+        mojoResult.session.getProjectBuildingRequest();
 
-    /**
-     * Use the currently compiled version of the plugin, not the local repository one.<br>
-     * To make that happen, create a symbolic link in a temporary directory to the target/classes directory.
-     *
-     * @param request The execution request.
-     * @throws IOException IOException at creating the symbolic link.
-     */
-    private static void setLocalRepository(MavenExecutionRequest request) throws IOException {
-        File compileDir = getTestFile("target/classes/org/codehaus/mojo");
-        if (!compileDir.exists()) {
-            throw new FileNotFoundException(compileDir + " target compilation directory does not exist");
-        }
+//        try (org.mockito.MockedConstruction<LicensedArtifactResolver> mockPaymentService =
+//                org.mockito.Mockito.mockConstruction(
+//                        LicensedArtifactResolver.class,
+//                        (mock, context) ->
+//                                new LicensedArtifactResolver(mojoResult.projectBuilder, () -> mojoResult.session))) {
 
-        File targetDir = getTestFile("target/.m2/repository");
+            downloadLicensesMojo.execute();
 
-        // Maybe "org.codehaus.mojo" doesn't have to be hard-coded and can be found somewhere else?
-        String repositoryPathString = "org/codehaus/mojo/license-maven-plugin";
-        File repositoryPath =
-                Paths.get(targetDir.getAbsolutePath(), repositoryPathString).toFile();
-        if (!repositoryPath.exists()) {
-            if (!repositoryPath.mkdirs()) {
-                throw new IOException("Could not create repository path: " + repositoryPath.getAbsolutePath());
-            }
-            Files.createSymbolicLink(Paths.get(repositoryPath.toString(), "2.5.0-SNAPSHOT"), compileDir.toPath());
-        }
-
-        request.setLocalRepositoryPath(targetDir);
+            checkResultingLicensesXml();
+//        }
     }
 
     private void checkResultingLicensesXml()
@@ -339,5 +363,15 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
 
     private static JAXBContext createJaxbSerializer() throws JAXBException {
         return JAXBContext.newInstance(Policy.class, DependencyInfos.class);
+    }
+
+    private class MavenProjectInfo {
+        private final ProjectBuilder projectBuilder;
+        private final MavenProject project;
+
+        public MavenProjectInfo(ProjectBuilder projectBuilder, MavenProject project) {
+            this.projectBuilder = projectBuilder;
+            this.project = project;
+        }
     }
 }
