@@ -19,24 +19,14 @@ import java.security.Policy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
-import org.apache.maven.DefaultMaven;
-import org.apache.maven.Maven;
-import org.apache.maven.execution.DefaultMavenExecutionRequest;
 import org.apache.maven.execution.MavenExecutionRequest;
-import org.apache.maven.execution.MavenExecutionRequestPopulator;
-import org.apache.maven.execution.MavenExecutionResult;
-import org.apache.maven.plugin.Mojo;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.plugin.testing.MojoRule;
-import org.apache.maven.settings.MavenSettingsBuilder;
-import org.apache.maven.settings.Settings;
 import org.codehaus.mojo.license.AbstractDownloadLicensesMojo;
 import org.codehaus.mojo.license.AggregateDownloadLicensesMojo;
 import org.junit.Rule;
@@ -51,9 +41,9 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 @RunWith(Parameterized.class)
-public class DownloadLicensesIT extends AbstractMojoTestCase {
+public class DownloadLicensesTest extends AbstractMojoTestCase {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DownloadLicensesIT.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DownloadLicensesTest.class);
     public static final String ARTIFACT_ID = "license-maven-plugin";
 
     public static final String LICENSE_AGGREGATE_DOWNLOAD_LICENSES = "license:" + AggregateDownloadLicensesMojo.GOAL;
@@ -93,8 +83,7 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
         @XmlAttribute
         String license;
 
-        public DependencyInfo() {
-        }
+        public DependencyInfo() {}
 
         public DependencyInfo(String name, String groupId, String artifactId, String version, String license) {
             this.name = name;
@@ -109,10 +98,10 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
             if (!(o instanceof DependencyInfo)) return false;
             DependencyInfo that = (DependencyInfo) o;
             return Objects.equals(name, that.name)
-                && Objects.equals(groupId, that.groupId)
-                && Objects.equals(artifactId, that.artifactId)
-                && Objects.equals(version, that.version)
-                && Objects.equals(license, that.license);
+                    && Objects.equals(groupId, that.groupId)
+                    && Objects.equals(artifactId, that.artifactId)
+                    && Objects.equals(version, that.version)
+                    && Objects.equals(license, that.license);
         }
 
         @Override
@@ -123,11 +112,11 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
         @Override
         public String toString() {
             return "DependencyInfo{" + "name='"
-                + name + '\'' + ", groupId='"
-                + groupId + '\'' + ", artifactId='"
-                + artifactId + '\'' + ", version='"
-                + version + '\'' + ", license='"
-                + license + '\'' + '}';
+                    + name + '\'' + ", groupId='"
+                    + groupId + '\'' + ", artifactId='"
+                    + artifactId + '\'' + ", version='"
+                    + version + '\'' + ", license='"
+                    + license + '\'' + '}';
         }
     }
 
@@ -163,14 +152,14 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
         dataFormatting4.orderBy = AbstractDownloadLicensesMojo.DataFormatting.OrderBy.licenseName;
 
         return Arrays.asList(
-            new Parameter(dataFormatting1, "pom - orderBy.dependencyName.xml", "sortedByDependencyName.xml"),
-            new Parameter(
-                dataFormatting2, "pom - orderBy.dependencyPluginId.xml", "sortedByDependencyPluginId.xml"),
-            new Parameter(dataFormatting3, "pom - orderBy.licenseMatch.xml", "sortedByLicenseMatch.xml"),
-            new Parameter(dataFormatting4, "pom - orderBy.licenseName.xml", "sortedByLicenseName.xml"));
+                new Parameter(dataFormatting1, "pom - orderBy.dependencyName.xml", "sortedByDependencyName.xml"),
+                new Parameter(
+                        dataFormatting2, "pom - orderBy.dependencyPluginId.xml", "sortedByDependencyPluginId.xml"),
+                new Parameter(dataFormatting3, "pom - orderBy.licenseMatch.xml", "sortedByLicenseMatch.xml"),
+                new Parameter(dataFormatting4, "pom - orderBy.licenseName.xml", "sortedByLicenseName.xml"));
     }
 
-    public DownloadLicensesIT(Parameter parameter) {
+    public DownloadLicensesTest(Parameter parameter) {
         super();
         this.parameter = parameter;
     }
@@ -188,9 +177,10 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
         assertNotNull(pom);
         assertTrue(pom.exists());
 
-        AggregateDownloadLicensesMojo downloadLicensesMojo = (AggregateDownloadLicensesMojo) mojoRule.lookupConfiguredMojo(
-            getTestFile("src/test/resources/unit/AbstractDownloadLicensesMojoIT/"),
-            AggregateDownloadLicensesMojo.GOAL);
+        AggregateDownloadLicensesMojo downloadLicensesMojo =
+                (AggregateDownloadLicensesMojo) mojoRule.lookupConfiguredMojo(
+                        getTestFile("src/test/resources/unit/AbstractDownloadLicensesMojoIT/"),
+                        AggregateDownloadLicensesMojo.GOAL);
         downloadLicensesMojo.execute();
 
         checkResultingLicensesXml();
@@ -214,7 +204,7 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
         // Maybe "org.codehaus.mojo" doesn't have to be hard-coded and can be found somewhere else?
         String repositoryPathString = "org/codehaus/mojo/license-maven-plugin";
         File repositoryPath =
-            Paths.get(targetDir.getAbsolutePath(), repositoryPathString).toFile();
+                Paths.get(targetDir.getAbsolutePath(), repositoryPathString).toFile();
         if (!repositoryPath.exists()) {
             if (!repositoryPath.mkdirs()) {
                 throw new IOException("Could not create repository path: " + repositoryPath.getAbsolutePath());
@@ -226,7 +216,7 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
     }
 
     private void checkResultingLicensesXml()
-        throws ParserConfigurationException, SAXException, IOException, JAXBException {
+            throws ParserConfigurationException, SAXException, IOException, JAXBException {
         Path testPath = Paths.get(getBasedir(), "src/test/resources/unit/AbstractDownloadLicensesMojoIT");
         Path generatedResourcesPath = Paths.get(testPath.toString(), "target/generated-resources");
         Path licensesPath = Paths.get(generatedResourcesPath.toString(), "licenses.xml");
@@ -269,7 +259,7 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
                             if (licenseNode.getNodeName().equals("license")) {
                                 for (int l = 0; l < licenseNode.getChildNodes().getLength(); l++) {
                                     Node licenseChild =
-                                        licenseNode.getChildNodes().item(l);
+                                            licenseNode.getChildNodes().item(l);
                                     if (licenseChild.getNodeName().equals("name")) {
                                         licenses.add(licenseChild.getTextContent());
                                     }
@@ -289,8 +279,8 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
                 if (name == null) {
                     System.out.println("Dependency without name: " + groupId + ":" + artifactId + ":" + version);
                 } else {
-                    System.out.println(
-                        "Dependency: " + name + " (" + groupId + ":" + artifactId + ":" + version + ") - " + license);
+                    System.out.println("Dependency: " + name + " (" + groupId + ":" + artifactId + ":" + version
+                            + ") - " + license);
                 }
             }
         }
@@ -306,25 +296,25 @@ public class DownloadLicensesIT extends AbstractMojoTestCase {
 
         JAXBContext jaxbSerializer = createJaxbSerializer();
         DependencyInfos expectedDependencyInfos =
-            (DependencyInfos) jaxbSerializer.createUnmarshaller().unmarshal(expectedPath.toFile());
+                (DependencyInfos) jaxbSerializer.createUnmarshaller().unmarshal(expectedPath.toFile());
 
         assertEquals(
-            expectedDependencyInfos.dependencyInfos.stream()
-                .map(Object::toString)
-                .collect(Collectors.joining("\n"))
-                + "\n != \n"
-                + dependencyInfos.stream().map(Object::toString).collect(Collectors.joining("\n")),
-            expectedDependencyInfos.dependencyInfos.size(),
-            dependencyInfos.size());
+                expectedDependencyInfos.dependencyInfos.stream()
+                                .map(Object::toString)
+                                .collect(Collectors.joining("\n"))
+                        + "\n != \n"
+                        + dependencyInfos.stream().map(Object::toString).collect(Collectors.joining("\n")),
+                expectedDependencyInfos.dependencyInfos.size(),
+                dependencyInfos.size());
 
         for (int i = 0; i < dependencyInfos.size(); i++) {
             DependencyInfo expectedDependencyInfo = expectedDependencyInfos.dependencyInfos.get(i);
             DependencyInfo actualDependencyInfo = dependencyInfos.get(i);
 
             assertEquals(
-                "Expected: " + expectedDependencyInfo.name + ", Sorted: " + actualDependencyInfo.name,
-                expectedDependencyInfo,
-                actualDependencyInfo);
+                    "Expected: " + expectedDependencyInfo.name + ", Sorted: " + actualDependencyInfo.name,
+                    expectedDependencyInfo,
+                    actualDependencyInfo);
         }
     }
 
