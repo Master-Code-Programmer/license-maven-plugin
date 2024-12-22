@@ -475,7 +475,7 @@ public class CalcFileWriter {
         styleGray.setProperty(StyleTableCellPropertiesElement.BackgroundColor, alternatingRowsColor.toString());
         styleGray.setProperty(OdfTableColumnProperties.UseOptimalColumnWidth, String.valueOf(true));
 
-        createDataFormattingStyles(alternatingRowsColor, officeStyles, dataFormatting.matchedLicensesHaveBorder);
+        createDataFormattingStyles(alternatingRowsColor, officeStyles, dataFormatting.getMatchedLicensesHaveBorder());
 
         /* Set own, empty style, instead of leaving the style out,
         because otherwise it copies the style of the row above. */
@@ -504,6 +504,9 @@ public class CalcFileWriter {
             currentRow.setHeight(0, true);
 
             OdfStyle defaultCellStyle = currentRow.getDefaultCellStyle();
+            if (defaultCellStyle == null) {
+                defaultCellStyle = officeStyles.newStyle("defaultCellStyle", OdfStyleFamily.TableCell);
+            }
             defaultCellStyle.setProperty(StyleTableRowPropertiesElement.RowHeight, "1");
             currentRow.setDefaultCellStyle(defaultCellStyle);
             // --------------------------------------------------------------------------------------
@@ -548,7 +551,7 @@ public class CalcFileWriter {
                 createDataCellsInRow(currentRow, GENERAL_START_COLUMN, cellStyle, extendedInfo.getName());
                 // Developers
                 currentRowData = new CurrentRowData(currentRowIndex, extraRows, hasExtendedInfo);
-                if (dataFormatting.skipDevelopers) {
+                if (dataFormatting.getSkipDevelopers()) {
                     setStyleOnEmptyCells(
                             cellListParameter, currentRowData, DEVELOPERS_START_COLUMN, DEVELOPERS_COLUMNS);
                 } else {
@@ -688,7 +691,7 @@ public class CalcFileWriter {
             AbstractAddThirdPartyMojo.ExcludedLicenses excludedLicenses,
             ProjectLicense license,
             boolean grayBackground) {
-        if (dataFormatting != null && dataFormatting.orderBy != DataFormatting.OrderBy.none) {
+        if (dataFormatting != null && dataFormatting.getOrderBy() != DataFormatting.OrderBy.none) {
             final LicenseColorStyle licenseColorStyle =
                     LicenseColorStyle.getLicenseColorStyle(license, dataFormatting, excludedLicenses);
             final String styleName;
