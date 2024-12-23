@@ -55,12 +55,12 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 @RunWith(Parameterized.class)
-public class DownloadLicensesTest extends AbstractMojoTestCase {
+class DownloadLicensesTest extends AbstractMojoTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(DownloadLicensesTest.class);
-    public static final String ARTIFACT_ID = "license-maven-plugin";
+    static final String ARTIFACT_ID = "license-maven-plugin";
 
-    public static final String LICENSE_AGGREGATE_DOWNLOAD_LICENSES = "license:" + AggregateDownloadLicensesMojo.GOAL;
+    static final String LICENSE_AGGREGATE_DOWNLOAD_LICENSES = "license:" + AggregateDownloadLicensesMojo.GOAL;
     private final Parameter parameter;
 
     @Rule
@@ -83,11 +83,11 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
         @XmlElement
         List<DependencyInfo> dependencyInfos;
 
-        public DependencyInfos() {
+        DependencyInfos() {
             this.dependencyInfos = new ArrayList<>();
         }
 
-        public DependencyInfos(List<DependencyInfo> dependencyInfos) {
+        DependencyInfos(List<DependencyInfo> dependencyInfos) {
             this.dependencyInfos = dependencyInfos;
         }
     }
@@ -109,9 +109,9 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
         @XmlAttribute
         String license;
 
-        public DependencyInfo() {}
+        DependencyInfo() {}
 
-        public DependencyInfo(String name, String groupId, String artifactId, String version, String license) {
+        DependencyInfo(String name, String groupId, String artifactId, String version, String license) {
             this.name = name;
             this.groupId = groupId;
             this.artifactId = artifactId;
@@ -146,12 +146,12 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
         }
     }
 
-    public static class Parameter {
+    static class Parameter {
         final AbstractDownloadLicensesMojo.DataFormatting dataFormatting;
         final String pom;
         private final String expected;
 
-        public Parameter(AbstractDownloadLicensesMojo.DataFormatting dataFormatting, String pom, String expected) {
+        Parameter(AbstractDownloadLicensesMojo.DataFormatting dataFormatting, String pom, String expected) {
             this.dataFormatting = dataFormatting;
             this.pom = pom;
             this.expected = expected;
@@ -185,12 +185,12 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
                 new Parameter(dataFormatting4, "pom - orderBy.licenseName.xml", "sortedByLicenseName.xml"));
     }
 
-    public DownloadLicensesTest(Parameter parameter) {
+    DownloadLicensesTest(Parameter parameter) {
         super();
         this.parameter = parameter;
     }
 
-    public static class MojoResult {
+    static class MojoResult {
         private final Mojo mojo;
         private final ProjectBuilder projectBuilder;
         private final MavenProject project;
@@ -204,7 +204,7 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
         }
     }
 
-    public MojoResult lookupConfiguredMojo(File pom, String goal) throws Exception {
+    MojoResult lookupConfiguredMojo(File pom, String goal) throws Exception {
         MavenProjectInfo projectInfo = readMavenProject(pom);
         MavenProject project = projectInfo.project;
         MavenSession session = newMavenSession(project);
@@ -213,7 +213,7 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
         return new MojoResult(mojo, projectInfo.projectBuilder, project, session);
     }
 
-    public MavenProjectInfo readMavenProject(File pom) throws ComponentLookupException, ProjectBuildingException {
+    MavenProjectInfo readMavenProject(File pom) throws ComponentLookupException, ProjectBuildingException {
         MavenExecutionRequest request = new DefaultMavenExecutionRequest();
         request.setBaseDirectory(pom.toPath().getParent().toFile());
         ProjectBuildingRequest configuration = request.getProjectBuildingRequest();
@@ -386,7 +386,7 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
         private final ProjectBuilder projectBuilder;
         private final MavenProject project;
 
-        public MavenProjectInfo(ProjectBuilder projectBuilder, MavenProject project) {
+        MavenProjectInfo(ProjectBuilder projectBuilder, MavenProject project) {
             this.projectBuilder = projectBuilder;
             this.project = project;
         }
