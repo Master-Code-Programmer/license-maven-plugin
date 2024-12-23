@@ -43,6 +43,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -61,6 +65,18 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
 
     @Rule
     public MojoRule mojoRule = new MojoRule();
+
+    @Mock
+    private LicensedArtifactResolver licensedArtifactResolver;
+
+    private MojoResult mojoResult;
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        System.out.println("Setup called");
+        MockitoAnnotations.openMocks(this);
+    }
 
     @XmlRootElement
     private static class DependencyInfos {
@@ -215,28 +231,29 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
      */
     @Test
     public void testDataFormatting() throws Exception {
-        super.setUp();
+        setUp();
 
         File pom = getTestFile("src/test/resources/unit/AbstractDownloadLicensesMojoIT/" + parameter.pom);
         assertNotNull(pom);
         assertTrue(pom.exists());
 
-        MojoResult mojoResult = lookupConfiguredMojo(pom, AggregateDownloadLicensesMojo.GOAL);
-        AggregateDownloadLicensesMojo downloadLicensesMojo = (AggregateDownloadLicensesMojo) mojoResult.mojo;
-        mojoResult.project.setExecutionRoot(true);
-
-        mojoResult.session.getProjectBuildingRequest();
-
-//        try (org.mockito.MockedConstruction<LicensedArtifactResolver> mockPaymentService =
-//                org.mockito.Mockito.mockConstruction(
-//                        LicensedArtifactResolver.class,
-//                        (mock, context) ->
-//                                new LicensedArtifactResolver(mojoResult.projectBuilder, () -> mojoResult.session))) {
+        try (MockedConstruction<LicensedArtifactResolver> mockPaymentService = Mockito.mockConstruction(
+                LicensedArtifactResolver.class,
+                (LicensedArtifactResolver mock, MockedConstruction.Context context) ->
+                        getLicensedArtifactResolver(mojoResult))) {
+            mojoResult = lookupConfiguredMojo(pom, AggregateDownloadLicensesMojo.GOAL);
+            AggregateDownloadLicensesMojo downloadLicensesMojo = (AggregateDownloadLicensesMojo) mojoResult.mojo;
+            mojoResult.project.setExecutionRoot(true);
 
             downloadLicensesMojo.execute();
 
             checkResultingLicensesXml();
-//        }
+        }
+    }
+
+    private static LicensedArtifactResolver getLicensedArtifactResolver(MojoResult mojoResult) {
+        System.out.println("Mocked LicensedArtifactResolver.ctor");
+        return new LicensedArtifactResolver(mojoResult.projectBuilder, () -> mojoResult.session);
     }
 
     private void checkResultingLicensesXml()
