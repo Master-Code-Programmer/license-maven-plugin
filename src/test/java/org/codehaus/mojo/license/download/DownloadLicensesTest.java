@@ -55,7 +55,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 @RunWith(Parameterized.class)
-class DownloadLicensesTest extends AbstractMojoTestCase {
+public class DownloadLicensesTest extends AbstractMojoTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(DownloadLicensesTest.class);
     static final String ARTIFACT_ID = "license-maven-plugin";
@@ -121,7 +121,9 @@ class DownloadLicensesTest extends AbstractMojoTestCase {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof DependencyInfo)) return false;
+            if (!(o instanceof DependencyInfo)) {
+                return false;
+            }
             DependencyInfo that = (DependencyInfo) o;
             return Objects.equals(name, that.name)
                     && Objects.equals(groupId, that.groupId)
@@ -159,23 +161,23 @@ class DownloadLicensesTest extends AbstractMojoTestCase {
 
         @Override
         public String toString() {
-            return "Order: " + dataFormatting.orderBy.toString();
+            return "Order: " + dataFormatting.getOrderBy();
         }
     }
 
     @Parameterized.Parameters(name = "{index}: {0}")
     public static Collection<Parameter> data() {
         AbstractDownloadLicensesMojo.DataFormatting dataFormatting1 = new AbstractDownloadLicensesMojo.DataFormatting();
-        dataFormatting1.orderBy = AbstractDownloadLicensesMojo.DataFormatting.OrderBy.dependencyName;
+        dataFormatting1.setOrderBy(AbstractDownloadLicensesMojo.DataFormatting.OrderBy.dependencyName);
 
         AbstractDownloadLicensesMojo.DataFormatting dataFormatting2 = new AbstractDownloadLicensesMojo.DataFormatting();
-        dataFormatting2.orderBy = AbstractDownloadLicensesMojo.DataFormatting.OrderBy.dependencyPluginId;
+        dataFormatting2.setOrderBy(AbstractDownloadLicensesMojo.DataFormatting.OrderBy.dependencyPluginId);
 
         AbstractDownloadLicensesMojo.DataFormatting dataFormatting3 = new AbstractDownloadLicensesMojo.DataFormatting();
-        dataFormatting3.orderBy = AbstractDownloadLicensesMojo.DataFormatting.OrderBy.licenseMatch;
+        dataFormatting3.setOrderBy(AbstractDownloadLicensesMojo.DataFormatting.OrderBy.licenseMatch);
 
         AbstractDownloadLicensesMojo.DataFormatting dataFormatting4 = new AbstractDownloadLicensesMojo.DataFormatting();
-        dataFormatting4.orderBy = AbstractDownloadLicensesMojo.DataFormatting.OrderBy.licenseName;
+        dataFormatting4.setOrderBy(AbstractDownloadLicensesMojo.DataFormatting.OrderBy.licenseName);
 
         return Arrays.asList(
                 new Parameter(dataFormatting1, "pom - orderBy.dependencyName.xml", "sortedByDependencyName.xml"),
@@ -185,7 +187,7 @@ class DownloadLicensesTest extends AbstractMojoTestCase {
                 new Parameter(dataFormatting4, "pom - orderBy.licenseName.xml", "sortedByLicenseName.xml"));
     }
 
-    DownloadLicensesTest(Parameter parameter) {
+    public DownloadLicensesTest(Parameter parameter) {
         super();
         this.parameter = parameter;
     }
@@ -237,11 +239,14 @@ class DownloadLicensesTest extends AbstractMojoTestCase {
         assertNotNull(pom);
         assertTrue(pom.exists());
 
+        // FIXME: This must be inside the MockedConsutrction, but the MockedConstruction needs the next line first!
+        //        This is a deadlock!
+        mojoResult = lookupConfiguredMojo(pom, AggregateDownloadLicensesMojo.GOAL);
+
         try (MockedConstruction<LicensedArtifactResolver> mockPaymentService = Mockito.mockConstruction(
                 LicensedArtifactResolver.class,
                 (LicensedArtifactResolver mock, MockedConstruction.Context context) ->
                         getLicensedArtifactResolver(mojoResult))) {
-            mojoResult = lookupConfiguredMojo(pom, AggregateDownloadLicensesMojo.GOAL);
             AggregateDownloadLicensesMojo downloadLicensesMojo = (AggregateDownloadLicensesMojo) mojoResult.mojo;
             mojoResult.project.setExecutionRoot(true);
 
@@ -252,6 +257,7 @@ class DownloadLicensesTest extends AbstractMojoTestCase {
     }
 
     private static LicensedArtifactResolver getLicensedArtifactResolver(MojoResult mojoResult) {
+        assertNotNull("MojoResult hasn't been set yet", mojoResult);
         System.out.println("Mocked LicensedArtifactResolver.ctor");
         return new LicensedArtifactResolver(mojoResult.projectBuilder, () -> mojoResult.session);
     }
