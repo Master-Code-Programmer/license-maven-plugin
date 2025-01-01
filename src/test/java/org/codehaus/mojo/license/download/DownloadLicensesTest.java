@@ -193,16 +193,33 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
     }
 
     static class MojoResult {
-        private final Mojo mojo;
-        private final ProjectBuilder projectBuilder;
-        private final MavenProject project;
-        private final MavenSession session;
+        private Mojo mojo;
+        private MavenProject project;
+
+        /** ProjectBuilder is initially wrapped. */
+        private ProjectBuilder projectBuilder;
+        /** MavenSession is initially wrapped. */
+        private MavenSession session;
 
         MojoResult(Mojo mojo, ProjectBuilder projectBuilder, MavenProject project, MavenSession session) {
             this.mojo = mojo;
             this.projectBuilder = projectBuilder;
             this.project = project;
             this.session = session;
+        }
+
+        MojoResult() {
+            /* Need wrappers here, to circumvent a deadlock.
+            Because the LicensedArtifactResolver must be wrapped before
+            MojoResult gets actually created. But the LicensedArtifactResolver is based on LicensedArtifactResolver. */
+            this(null, new ProjectBuilderWrapper(), null, new MavenSessionWrapper());
+        }
+
+        public void wrap(MojoResult mojoResult) {
+            this.mojo = mojoResult.mojo;
+            ((ProjectBuilderWrapper) this.projectBuilder).wrap(mojoResult.projectBuilder);
+            this.project = mojoResult.project;
+            ((MavenSessionWrapper) this.session).wrap(mojoResult.session);
         }
     }
 
@@ -239,18 +256,20 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
         assertNotNull(pom);
         assertTrue(pom.exists());
 
-        // FIXME: This must be inside the MockedConsutrction, but the MockedConstruction needs the next line first!
-        //        This is a deadlock!
-        mojoResult = lookupConfiguredMojo(pom, AggregateDownloadLicensesMojo.GOAL);
-
+        // MojoResult with wrappers to circumvent a deadlock.
+        mojoResult = new MojoResult();
         try (MockedConstruction<LicensedArtifactResolver> mockPaymentService = Mockito.mockConstruction(
                 LicensedArtifactResolver.class,
                 (LicensedArtifactResolver mock, MockedConstruction.Context context) ->
                         getLicensedArtifactResolver(mojoResult))) {
+            final MojoResult realMojoResult = lookupConfiguredMojo(pom, AggregateDownloadLicensesMojo.GOAL);
+            mojoResult.wrap(realMojoResult);
             AggregateDownloadLicensesMojo downloadLicensesMojo = (AggregateDownloadLicensesMojo) mojoResult.mojo;
             mojoResult.project.setExecutionRoot(true);
 
             downloadLicensesMojo.execute();
+
+            System.out.println("DownloadLicenseMojo finished");
 
             checkResultingLicensesXml();
         }
@@ -280,6 +299,9 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
         NodeList dependenciesRoot = document.getElementsByTagName("dependencies");
         assertEquals(1, dependenciesRoot.getLength());
         NodeList dependencies = dependenciesRoot.item(0).getChildNodes();
+        if (dependencies.getLength() == 0) {
+            throw new IllegalArgumentException("No dependencies found in: " + licensesFile.getAbsolutePath());
+        }
         List<DependencyInfo> dependencyInfos = new ArrayList<>();
         for (int i = 0; i < dependencies.getLength(); i++) {
             if (dependencies.item(i).getNodeName().equals("dependency")) {
