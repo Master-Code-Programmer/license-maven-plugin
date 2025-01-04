@@ -157,24 +157,7 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>2.0.16</version>
-      </dependency>
-      <!-- FIXME: Is this needed? Or does the logging only not work because it's in the context of the
-          integration-test pom.xml? -->
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-simple</artifactId>
-        <version>2.0.16</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-core</artifactId>
-        <version>2.24.3</version>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>log4j-over-slf4j</artifactId>
-        <version>2.0.16</version>
+        <version>1.7.36</version>
       </dependency>
       <dependency>
         <!-- due to security error in transitive dependencies -->
@@ -347,43 +330,6 @@
       <!-- There are later versions, but that versions need JDKs after version 8 -->
       <version>0.9.0</version>
     </dependency>
-
-    <!-- Integration testing this plugin -->
-    <dependency>
-      <groupId>org.apache.maven.plugin-testing</groupId>
-      <artifactId>maven-plugin-testing-harness</artifactId>
-      <version>3.3.0</version>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- Needed for integration testing. Making "maven-plugin-testing-harness" work, which hasn't seen
-         updates in a long time, and this seems to be the only way to make it compatible with current
-         Maven versions. Tested with "maven-plugin-testing-harness" 3.3.0 from December 2014 - in November 2024. -->
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-compat</artifactId>
-      <version>${mavenVersion}</version>
-      <!--      <version>3.9.8</version>-->
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-inline</artifactId>
-      <version>4.11.0</version>
-      <scope>test</scope>
-    </dependency>
-    <!--    <dependency>-->
-    <!--      <groupId>org.apache.maven</groupId>-->
-    <!--      <artifactId>maven-core</artifactId>-->
-    <!--      <version>${mavenVersion}</version>-->
-    <!--      <scope>test</scope>-->
-    <!--    </dependency>-->
-    <!--    <dependency>-->
-    <!--      <groupId>org.apache.maven.resolver</groupId>-->
-    <!--      <artifactId>maven-resolver-api</artifactId>-->
-    <!--      <version>1.9.20</version>-->
-    <!--    </dependency>-->
   </dependencies>
 
   <build>
