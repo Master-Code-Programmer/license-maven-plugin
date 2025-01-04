@@ -43,6 +43,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
@@ -221,6 +222,14 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
             this.project = mojoResult.project;
             ((MavenSessionWrapper) this.session).wrap(mojoResult.session);
         }
+
+        public MavenSession unwrapMavenSession() {
+            if (session instanceof MavenSessionWrapper) {
+                return ((MavenSessionWrapper) session).getMavenSession();
+            } else {
+                throw new IllegalStateException("MavenSession is not wrapped.");
+            }
+        }
     }
 
     MojoResult lookupConfiguredMojo(File pom, String goal) throws Exception {
@@ -258,10 +267,14 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
 
         // MojoResult with wrappers to circumvent a deadlock.
         mojoResult = new MojoResult();
+        // LicensedArtifactResolver licensedArtifactResolver = getLicensedArtifactResolver(mojoResult);
         try (MockedConstruction<LicensedArtifactResolver> mockPaymentService = Mockito.mockConstruction(
                 LicensedArtifactResolver.class,
-                (LicensedArtifactResolver mock, MockedConstruction.Context context) ->
-                        getLicensedArtifactResolver(mojoResult))) {
+                Mockito.withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS),
+                (LicensedArtifactResolver mock, MockedConstruction.Context context) -> {
+                    mock.setMavenProjectBuilder(mojoResult.projectBuilder);
+                    mock.setMavenSessionProvider(() -> mojoResult.unwrapMavenSession());
+                })) {
             final MojoResult realMojoResult = lookupConfiguredMojo(pom, AggregateDownloadLicensesMojo.GOAL);
             mojoResult.wrap(realMojoResult);
             AggregateDownloadLicensesMojo downloadLicensesMojo = (AggregateDownloadLicensesMojo) mojoResult.mojo;
@@ -275,7 +288,7 @@ public class DownloadLicensesTest extends AbstractMojoTestCase {
         }
     }
 
-    private static LicensedArtifactResolver getLicensedArtifactResolver(MojoResult mojoResult) {
+    private static LicensedArtifactResolver getLicensedArtifactResolver(final MojoResult mojoResult) {
         assertNotNull("MojoResult hasn't been set yet", mojoResult);
         System.out.println("Mocked LicensedArtifactResolver.ctor");
         return new LicensedArtifactResolver(mojoResult.projectBuilder, () -> mojoResult.session);

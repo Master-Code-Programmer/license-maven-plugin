@@ -268,4 +268,8 @@ class MavenSessionWrapper extends MavenSession {
     public void wrap(MavenSession session) {
         this.mavenSession = session;
     }
+
+    public MavenSession getMavenSession() {
+        return mavenSession;
+    }
 }

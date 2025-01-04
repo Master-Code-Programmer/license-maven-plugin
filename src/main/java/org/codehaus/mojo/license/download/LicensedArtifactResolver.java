@@ -73,9 +73,17 @@ public class LicensedArtifactResolver {
     /**
      * Project builder.
      */
-    private final ProjectBuilder mavenProjectBuilder;
+    private ProjectBuilder mavenProjectBuilder;
 
-    private final Provider<MavenSession> mavenSessionProvider;
+    public void setMavenProjectBuilder(ProjectBuilder mavenProjectBuilder) {
+        this.mavenProjectBuilder = mavenProjectBuilder;
+    }
+
+    private Provider<MavenSession> mavenSessionProvider;
+
+    public void setMavenSessionProvider(Provider<MavenSession> mavenSessionProvider) {
+        this.mavenSessionProvider = mavenSessionProvider;
+    }
 
     @Inject
     public LicensedArtifactResolver(ProjectBuilder mavenProjectBuilder, Provider<MavenSession> mavenSessionProvider) {
