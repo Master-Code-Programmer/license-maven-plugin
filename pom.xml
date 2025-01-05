@@ -165,20 +165,6 @@
         <artifactId>maven-archiver</artifactId>
         <version>3.6.3</version>
       </dependency>
-      <!-- API, java.xml.bind module -->
-      <dependency>
-        <groupId>jakarta.xml.bind</groupId>
-        <artifactId>jakarta.xml.bind-api</artifactId>
-        <version>2.3.3</version>
-        <scope>test</scope>
-      </dependency>
-      <!-- Runtime, com.sun.xml.bind module -->
-      <dependency>
-        <groupId>org.glassfish.jaxb</groupId>
-        <artifactId>jaxb-runtime</artifactId>
-        <version>2.3.9</version>
-        <scope>test</scope>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -416,18 +402,6 @@
           </execution>
         </executions>
       </plugin>
-
-      <plugin>
-        <artifactId>maven-clean-plugin</artifactId>
-        <version>3.4.0</version>
-        <configuration>
-          <filesets>
-            <fileset>
-              <directory>src/test/resources/unit/AbstractDownloadLicensesMojoIT/target</directory>
-            </fileset>
-          </filesets>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
 
@@ -503,6 +477,11 @@
                 <groupId>org.wiremock</groupId>
                 <artifactId>wiremock-standalone</artifactId>
                 <version>3.10.0</version>
+              </dependency>
+              <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>5.11.0</version>
               </dependency>
             </dependencies>
             <executions>

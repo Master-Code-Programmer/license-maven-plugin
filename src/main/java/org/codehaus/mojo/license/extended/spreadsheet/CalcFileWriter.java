@@ -551,6 +551,9 @@ public class CalcFileWriter {
             currentRow.setHeight(0, true);
 
             OdfStyle defaultCellStyle = currentRow.getDefaultCellStyle();
+            if (defaultCellStyle == null) {
+                defaultCellStyle = officeStyles.newStyle("defaultCellStyle", OdfStyleFamily.TableCell);
+            }
             defaultCellStyle.setProperty(StyleTableRowPropertiesElement.RowHeight, "1");
             currentRow.setDefaultCellStyle(defaultCellStyle);
             // --------------------------------------------------------------------------------------
