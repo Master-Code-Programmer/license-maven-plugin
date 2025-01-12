@@ -23,3 +23,7 @@ bin/
 /*~
 /*/*~
 /dependencies.txt
+
+# Ignore test files
+/src/it/aggregate-download-licenses-sort-by-name/*.md
+/src/it/aggregate-download-licenses-sort-by-pluginId/*.md

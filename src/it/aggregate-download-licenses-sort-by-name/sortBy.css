@@ -1,0 +1,6 @@
+table thead tr th {
+    background: #f0f0f0;
+    position: sticky;
+    z-index: 100;
+    top: 0;
+}
