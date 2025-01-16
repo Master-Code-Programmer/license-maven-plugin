@@ -1,4 +1,4 @@
-See the result of `sortedByDependencyName.xml` as a website by starting a local webserver in this directory, like:
+See a HTML table of `sortedByDependencyName.xml` by starting a local webserver in this directory, like:
 
 ```shell
 python3 -m http.server

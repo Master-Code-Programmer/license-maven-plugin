@@ -88,10 +88,10 @@
           <failOnBlacklist>true</failOnBlacklist>
 
           <dataFormatting>
-            <orderBy>dependencyPluginId</orderBy>
+            <orderBy>licenseMatch</orderBy>
             <problematicLicenses>
               <problematicLicense>EPL 2.0</problematicLicense>
-              <problematicLicense>GPL2 w/ CPE</problematicLicense>
+              <problematicLicense>MIT License</problematicLicense>
             </problematicLicenses>
             <okLicenses>
               <okLicense>Apache License, Version 2.0</okLicense>

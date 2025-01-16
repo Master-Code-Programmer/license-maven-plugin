@@ -39,7 +39,7 @@ class DependencyInfos {
 }
 
 @XmlAccessorType(XmlAccessType.NONE)
-@XmlRootElement
+@XmlRootElement(name = "dependencyInfo")
 class DependencyInfo {
     @XmlAttribute
     String name
@@ -53,17 +53,17 @@ class DependencyInfo {
     @XmlAttribute
     String version
 
-    @XmlAttribute
-    String license
+    @XmlElement
+    List<String> licenses
 
     DependencyInfo() {}
 
-    DependencyInfo(String name, String groupId, String artifactId, String version, String license) {
+    DependencyInfo(String name, String groupId, String artifactId, String version, List<String> licenses) {
         this.name = name
         this.groupId = groupId
         this.artifactId = artifactId
         this.version = version
-        this.license = license
+        this.licenses = licenses
     }
 
     @Override
@@ -76,12 +76,12 @@ class DependencyInfo {
             && Objects.equals(groupId, that.groupId)
             && Objects.equals(artifactId, that.artifactId)
             && Objects.equals(version, that.version)
-            && Objects.equals(license, that.license)
+            && Objects.equals(licenses, that.licenses)
     }
 
     @Override
     int hashCode() {
-        return Objects.hash(name, groupId, artifactId, version, license)
+        return Objects.hash(name, groupId, artifactId, version, licenses)
     }
 
     @Override
@@ -91,7 +91,7 @@ class DependencyInfo {
             ", groupId='" + groupId + '\'' +
             ", artifactId='" + artifactId + '\'' +
             ", version='" + version + '\'' +
-            ", license='" + license + '\'' +
+            ", licenses='" + licenses + '\'' +
             '}'
     }
 }
@@ -127,7 +127,7 @@ void checkResultingLicensesXml(Logger log, File basedir, String expected)
             String groupId = null
             String artifactId = null
             String version = null
-            String license = null
+            List<String> licenses = new ArrayList<>()
             for (int j = 0; j < dependency.getLength(); j++) {
                 if (dependency.item(j).getNodeName().equals("name")) {
                     name = dependency.item(j).getTextContent()
@@ -139,7 +139,6 @@ void checkResultingLicensesXml(Logger log, File basedir, String expected)
                     version = dependency.item(j).getTextContent()
                 } else if (dependency.item(j).getNodeName().equals("licenses")) {
                     Node licensesNode = dependency.item(j)
-                    List<String> licenses = new ArrayList<>()
                     for (int k = 0; k < licensesNode.getChildNodes().getLength(); k++) {
                         Node licenseNode = licensesNode.getChildNodes().item(k)
                         if (licenseNode.getNodeName().equals("license")) {
@@ -154,19 +153,17 @@ void checkResultingLicensesXml(Logger log, File basedir, String expected)
                     }
                     if (!licenses.isEmpty()) {
                         licenses.sort(Comparator.naturalOrder())
-                        license = licenses.get(0)
                     }
                 }
             }
             assertNotNull(groupId)
             assertNotNull(artifactId)
             assertNotNull(version)
-            dependencyInfos.add(new DependencyInfo(name, groupId, artifactId, version, license))
+            dependencyInfos.add(new DependencyInfo(name, groupId, artifactId, version, licenses))
             if (name == null) {
-                log.log(Level.INFO, "Dependency without name: " + groupId + ":" + artifactId + ":" + version)
+                log.log(Level.INFO, "Dependency without name: {0}:{1}:{2}", groupId, artifactId, version)
             } else {
-                log.log(Level.INFO, "Dependency: " + name + " (" + groupId + ":" + artifactId + ":" + version
-                    + ") - " + license)
+                log.log(Level.INFO, "Dependency: {0} ({1}:{2}:{3}) - {4}", name, groupId, artifactId, version, licenses)
             }
         }
     }
@@ -175,7 +172,7 @@ void checkResultingLicensesXml(Logger log, File basedir, String expected)
     Comment this line in, if there have been changes in the data sorting and new files to check against, must be
     created.
     */
-    saveDependencyInfos(log, dependencyInfos);
+    saveDependencyInfos(log, dependencyInfos)
 
     Path expectedPath = Paths.get(basedir.toString(), expected)
 
@@ -186,10 +183,10 @@ void checkResultingLicensesXml(Logger log, File basedir, String expected)
     assertEquals(
         expectedDependencyInfos.dependencyInfos.size(),
         dependencyInfos.size(),
-        () -> expectedDependencyInfos.dependencyInfos.stream()
+        () -> "Expected:\n" + expectedDependencyInfos.dependencyInfos.stream()
             .map(Object::toString)
             .collect(Collectors.joining("\n"))
-            + "\n != \n"
+            + "\n != Actual:\n"
             + dependencyInfos.stream().map(Object::toString).collect(Collectors.joining("\n")))
 
     for (int i = 0; i < dependencyInfos.size(); i++) {
@@ -199,7 +196,7 @@ void checkResultingLicensesXml(Logger log, File basedir, String expected)
         assertEquals(
             expectedDependencyInfo,
             actualDependencyInfo,
-            "Expected: " + expectedDependencyInfo.name + ", Sorted: " + actualDependencyInfo.name)
+            () -> "Expected: " + expectedDependencyInfo.name + ", Sorted: " + actualDependencyInfo.name)
     }
 }
 
@@ -219,7 +216,7 @@ private void saveDependencyInfos(Logger log, List<DependencyInfo> dependencyInfo
     JAXBContext jaxbContext = createJaxbSerializer()
     File tempFile = File.createTempFile("licensesSort", ".xml")
     jaxbContext.createMarshaller().marshal(dependencyInfosXml, tempFile)
-    log.log(Level.INFO, "Sorted XML: " + tempFile.getAbsolutePath())
+    log.log(Level.INFO, "Sorted XML: {0}", tempFile.getAbsolutePath())
 }
 
 private static JAXBContext createJaxbSerializer() throws JAXBException {
