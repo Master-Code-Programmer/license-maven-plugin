@@ -1,3 +1,8 @@
+/*
+ * This script works only in the converted HTML file, converted by <code>convert.sh</code>.
+ * <br>In the live-converted "XML -> XSLT" version it's ignored.
+ */
+
 const table = document.querySelector('table'); //get the table to be sorted
 
 table.querySelectorAll('th') // get all the table header elements
@@ -13,7 +18,7 @@ function sortTable(table, sortColumn) {
     const tableData = table2data(tableBody);
     // sort the extracted data
     tableData.sort((a, b) => {
-        if (a[sortColumn].toLowerCase() > b[sortColumn].toLowerCase()) {
+        if (sortColumn < a.length && sortColumn < b.length && a[sortColumn].toLowerCase() > b[sortColumn].toLowerCase()) {
             return 1;
         }
         return -1;

@@ -78,9 +78,6 @@
           <writeCalcFile>true</writeCalcFile>
           <writeExcelFile>true</writeExcelFile>
 
-          <licensesCalcOutputFile>target/generated-resources/licenses - orderByDependencyName.ods</licensesCalcOutputFile>
-          <licensesExcelOutputFile>target/generated-resources/licenses - orderByDependencyName.xlsx</licensesExcelOutputFile>
-
           <excludedLicenses>
             <excludedLicense>GNU General Lesser Public License (LGPL) version 3.0</excludedLicense>
           </excludedLicenses>

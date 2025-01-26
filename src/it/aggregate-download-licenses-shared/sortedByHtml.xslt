@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
+    <!-- Output method set to html for HTML table -->
+    <xsl:output method="html" encoding="UTF-8" doctype-public="-//W3C//DTD HTML 4.01 Transitional//EN"
+                doctype-system="http://www.w3.org/TR/html4/loose.dtd"/>
+
+    <xsl:template match="/*//*[1]">
+        <link rel="stylesheet" type="text/css" href="../aggregate-download-licenses-shared/sortBy.css"/>
+    </xsl:template>
+
     <xsl:template match="/">
         <html>
             <body>
@@ -15,7 +23,7 @@
                     </tr>
                     <xsl:apply-templates select="/dependencyInfos/dependencyInfos"/>
                 </table>
-                <script src="sortBy.js"/>
+                <script src="../aggregate-download-licenses-shared/sortBy.js"/>
             </body>
         </html>
     </xsl:template>
@@ -40,9 +48,12 @@
 
             <td>
                 <table border="1">
-                    <tr><th>Licenses</th></tr>
                     <xsl:for-each select="licenses">
-                        <tr><td><xsl:value-of select="."/></td></tr>
+                        <tr>
+                            <td>
+                                <xsl:value-of select="."/>
+                            </td>
+                        </tr>
                     </xsl:for-each>
                 </table>
             </td>

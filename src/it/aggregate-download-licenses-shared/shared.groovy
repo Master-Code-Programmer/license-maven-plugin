@@ -211,7 +211,7 @@ void checkResultingLicensesXml(Logger log, File basedir, String expected)
  * @throws IOException   File access exception.
  */
 @SuppressWarnings("unused")
-private void saveDependencyInfos(Logger log, List<DependencyInfo> dependencyInfos) throws JAXBException, IOException {
+private static void saveDependencyInfos(Logger log, List<DependencyInfo> dependencyInfos) throws JAXBException, IOException {
     DependencyInfos dependencyInfosXml = new DependencyInfos(dependencyInfos)
     JAXBContext jaxbContext = createJaxbSerializer()
     File tempFile = File.createTempFile("licensesSort", ".xml")
