@@ -22,33 +22,9 @@ package org.codehaus.mojo.license.download;
  * #L%
  */
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -83,6 +59,28 @@ import org.codehaus.mojo.license.utils.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
 /**
  * Utilities for downloading remote license files.
  *
@@ -103,7 +101,9 @@ public class LicenseDownloader implements AutoCloseable {
     private final Map<String, ContentSanitizer> contentSanitizers;
     private final Charset charset;
 
-    /** Credentials for authenticated downloads. May be {@code null} if no authentication is configured. */
+    /**
+     * Credentials for authenticated downloads. May be {@code null} if no authentication is configured.
+     */
     private final String userName;
 
     private final String password;
@@ -115,30 +115,32 @@ public class LicenseDownloader implements AutoCloseable {
      */
     private final String serverUrl;
 
-    /** Additional HTTP headers to include in authenticated requests (e.g. custom tokens). May be empty. */
+    /**
+     * Additional HTTP headers to include in authenticated requests (e.g. custom tokens). May be empty.
+     */
     private final Map<String, String> httpHeaders;
 
     /**
      * Creates a new {@code LicenseDownloader} without authentication. Proxy settings and timeouts are still applied.
      */
     public LicenseDownloader(
-            Proxy proxy,
-            int connectTimeout,
-            int socketTimeout,
-            int connectionRequestTimeout,
-            Map<String, ContentSanitizer> contentSanitizers,
-            Charset charset) {
+        Proxy proxy,
+        int connectTimeout,
+        int socketTimeout,
+        int connectionRequestTimeout,
+        Map<String, ContentSanitizer> contentSanitizers,
+        Charset charset) {
         this(
-                proxy,
-                connectTimeout,
-                socketTimeout,
-                connectionRequestTimeout,
-                contentSanitizers,
-                charset,
-                null,
-                null,
-                null,
-                Collections.emptyMap());
+            proxy,
+            connectTimeout,
+            socketTimeout,
+            connectionRequestTimeout,
+            contentSanitizers,
+            charset,
+            null,
+            null,
+            null,
+            Collections.emptyMap());
     }
 
     /**
@@ -147,30 +149,30 @@ public class LicenseDownloader implements AutoCloseable {
      * <p>Credentials ({@code userName}/{@code password}) and {@code httpHeaders} are sent only to URLs that start
      * with {@code serverUrl}, preventing credential leakage to third-party license servers.
      *
-     * @param proxy               optional proxy configuration from {@code settings.xml}
-     * @param connectTimeout      HTTP connection timeout in milliseconds
-     * @param socketTimeout       HTTP socket (read) timeout in milliseconds
+     * @param proxy                    optional proxy configuration from {@code settings.xml}
+     * @param connectTimeout           HTTP connection timeout in milliseconds
+     * @param socketTimeout            HTTP socket (read) timeout in milliseconds
      * @param connectionRequestTimeout HTTP connection-pool request timeout in milliseconds
-     * @param contentSanitizers   optional content sanitizers keyed by an id string
-     * @param charset             charset used when reading text license content
-     * @param userName            username for preemptive Basic Authentication, or {@code null}/empty to disable
-     * @param password            password for preemptive Basic Authentication, or {@code null}/empty to disable
-     * @param serverUrl           URL prefix that a license URL must start with in order to receive credentials;
-     *                            {@code null} disables authentication for all URLs
-     * @param httpHeaders         additional HTTP headers sent only to matching URLs (e.g. {@code Authorization: Bearer})
+     * @param contentSanitizers        optional content sanitizers keyed by an id string
+     * @param charset                  charset used when reading text license content
+     * @param userName                 username for preemptive Basic Authentication, or {@code null}/empty to disable
+     * @param password                 password for preemptive Basic Authentication, or {@code null}/empty to disable
+     * @param serverUrl                URL prefix that a license URL must start with in order to receive credentials;
+     *                                 {@code null} disables authentication for all URLs
+     * @param httpHeaders              additional HTTP headers sent only to matching URLs (e.g. {@code Authorization: Bearer})
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     public LicenseDownloader(
-            Proxy proxy,
-            int connectTimeout,
-            int socketTimeout,
-            int connectionRequestTimeout,
-            Map<String, ContentSanitizer> contentSanitizers,
-            Charset charset,
-            String userName,
-            String password,
-            String serverUrl,
-            Map<String, String> httpHeaders) {
+        Proxy proxy,
+        int connectTimeout,
+        int socketTimeout,
+        int connectionRequestTimeout,
+        Map<String, ContentSanitizer> contentSanitizers,
+        Charset charset,
+        String userName,
+        String password,
+        String serverUrl,
+        Map<String, String> httpHeaders) {
         this.contentSanitizers = contentSanitizers;
         this.charset = charset;
         this.userName = userName;
@@ -178,27 +180,27 @@ public class LicenseDownloader implements AutoCloseable {
         this.serverUrl = serverUrl;
         this.httpHeaders = httpHeaders != null ? httpHeaders : Collections.emptyMap();
         final Builder configBuilder = RequestConfig.copy(RequestConfig.DEFAULT) //
-                .setConnectTimeout(connectTimeout) //
-                .setSocketTimeout(socketTimeout) //
-                .setCookieSpec(CookieSpecs.STANDARD)
-                .setConnectionRequestTimeout(connectionRequestTimeout);
+            .setConnectTimeout(connectTimeout) //
+            .setSocketTimeout(socketTimeout) //
+            .setCookieSpec(CookieSpecs.STANDARD)
+            .setConnectionRequestTimeout(connectionRequestTimeout);
 
         if (proxy != null) {
             configBuilder.setProxy(new HttpHost(proxy.getHost(), proxy.getPort(), proxy.getProtocol()));
         }
 
         HttpClientBuilder clientBuilder = HttpClients.custom()
-                .setDefaultRequestConfig(configBuilder.build())
-                /*
-                If you download licenses without a header, for example, from "gnu.org"
-                (one of the most used, important license hosters),
-                without a user-agent, it will block all download attempts with
-                a (misleading) error: "429 Too many requests".
-                Even on the first download after a week of not contacting gnu.org!
+            .setDefaultRequestConfig(configBuilder.build())
+            /*
+            If you download licenses without a header, for example, from "gnu.org"
+            (one of the most used, important license hosters),
+            without a user-agent, it will block all download attempts with
+            a (misleading) error: "429 Too many requests".
+            Even on the first download after a week of not contacting gnu.org!
 
-                Using "wget" here, because that is a well-known client and it does basically what is done here.
-                */
-                .setUserAgent("Wget/1.21.4");
+            Using "wget" here, because that is a well-known client and it does basically what is done here.
+            */
+            .setUserAgent("Wget/1.21.4");
         if (proxy != null) {
             if (proxy.getUsername() != null && proxy.getPassword() != null) {
                 final CredentialsProvider credsProvider = new BasicCredentialsProvider();
@@ -213,8 +215,8 @@ public class LicenseDownloader implements AutoCloseable {
                     final List<Pattern> nonProxyPatterns = new ArrayList<>();
                     for (String nonProxyHost : nonProxyHosts) {
                         final Pattern pat = Pattern.compile(
-                                nonProxyHost.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*"),
-                                Pattern.CASE_INSENSITIVE);
+                            nonProxyHost.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*"),
+                            Pattern.CASE_INSENSITIVE);
                         nonProxyPatterns.add(pat);
                     }
                     final HttpHost proxyHost = new HttpHost(proxy.getHost(), proxy.getPort());
@@ -222,7 +224,7 @@ public class LicenseDownloader implements AutoCloseable {
 
                         @Override
                         protected HttpHost determineProxy(HttpHost target, HttpRequest request, HttpContext context)
-                                throws HttpException {
+                            throws HttpException {
                             for (Pattern pattern : nonProxyPatterns) {
                                 if (pattern.matcher(target.getHostName()).matches()) {
                                     return null;
@@ -245,14 +247,14 @@ public class LicenseDownloader implements AutoCloseable {
      * can be adjusted based on the mime type of the HTTP response.
      *
      * @param licenseUrlString the URL
-     * @param fileNameEntry a hint where to store the license file
+     * @param fileNameEntry    a hint where to store the license file
      * @return the path to the file where the downloaded license file was stored
      * @throws IOException
      * @throws URISyntaxException
      * @throws MojoFailureException
      */
     public LicenseDownloadResult downloadLicense(String licenseUrlString, FileNameEntry fileNameEntry)
-            throws IOException, URISyntaxException, MojoFailureException {
+        throws IOException, URISyntaxException, MojoFailureException {
         final File outputFile = fileNameEntry.getFile();
         if (licenseUrlString == null || licenseUrlString.isEmpty()) {
             throw new IllegalArgumentException("Null URL for file " + outputFile.getPath());
@@ -274,28 +276,23 @@ public class LicenseDownloader implements AutoCloseable {
         } else {
             LOG.debug("About to download '{}'", licenseUrlString);
             final HttpGet request = new HttpGet(licenseUrlString);
-            final HttpClientContext context;
             if (shouldAuthenticate(licenseUrlString)) {
                 LOG.debug("Applying authentication for URL '{}' (matches serverUrl '{}')", licenseUrlString, serverUrl);
-                context = makeLocalContext(new URL(licenseUrlString));
+                makeLocalContext(new URL(licenseUrlString));
                 for (Map.Entry<String, String> header : httpHeaders.entrySet()) {
                     LOG.debug(
-                            "Adding HTTP header '{}' to authenticated request for '{}'",
-                            header.getKey(),
-                            licenseUrlString);
+                        "Adding HTTP header '{}' to authenticated request for '{}'",
+                        header.getKey(),
+                        licenseUrlString);
                     request.addHeader(header.getKey(), header.getValue());
                 }
-            } else {
-                context = null;
             }
-            try (CloseableHttpResponse response =
-                    context != null ? client.execute(request, context) : client.execute(request)) {
             try (CloseableHttpResponse response = tryDownload(licenseUrlString)) {
                 final StatusLine statusLine = response.getStatusLine();
                 if (statusLine.getStatusCode() != HttpStatus.SC_OK) {
                     return LicenseDownloadResult.failure("'" + licenseUrlString + "' returned "
-                            + statusLine.getStatusCode()
-                            + (statusLine.getReasonPhrase() != null ? " " + statusLine.getReasonPhrase() : ""));
+                        + statusLine.getStatusCode()
+                        + (statusLine.getReasonPhrase() != null ? " " + statusLine.getReasonPhrase() : ""));
                 }
 
                 final HttpEntity entity = response.getEntity();
@@ -303,17 +300,17 @@ public class LicenseDownloader implements AutoCloseable {
                     final ContentType contentType = ContentType.get(entity);
 
                     File updatedFile = fileNameEntry.isPreferred()
-                            ? outputFile
-                            : updateFileExtension(outputFile, contentType != null ? contentType.getMimeType() : null);
+                        ? outputFile
+                        : updateFileExtension(outputFile, contentType != null ? contentType.getMimeType() : null);
                     LOG.debug(
-                            "Downloading '{}' -> '{}'{}",
-                            licenseUrlString,
-                            updatedFile,
-                            fileNameEntry.isPreferred() ? " (preferred file name)" : "");
+                        "Downloading '{}' -> '{}'{}",
+                        licenseUrlString,
+                        updatedFile,
+                        fileNameEntry.isPreferred() ? " (preferred file name)" : "");
 
                     if (sanitizers.isEmpty()) {
                         try (InputStream in = entity.getContent();
-                                FileOutputStream fos = new FileOutputStream(updatedFile)) {
+                             FileOutputStream fos = new FileOutputStream(updatedFile)) {
                             final MessageDigest md = MessageDigest.getInstance("SHA-1");
                             final byte[] buf = new byte[1024];
                             int len;
@@ -325,13 +322,13 @@ public class LicenseDownloader implements AutoCloseable {
                             final String expectedSha1 = fileNameEntry.getSha1();
                             if (expectedSha1 != null && !expectedSha1.equals(actualSha1)) {
                                 throw new MojoFailureException("URL '" + licenseUrlString
-                                        + "' returned content with unexpected sha1 '" + actualSha1 + "'; expected '"
-                                        + expectedSha1 + "'. You may want to (a) re-run the current mojo"
-                                        + " with -Dlicense.forceDownload=true or (b) change the expected sha1 in"
-                                        + " the licenseUrlFileNames entry '"
-                                        + fileNameEntry.getFile().getName()
-                                        + "' or (c) split the entry so that"
-                                        + " its URLs return content with different sha1 sums.");
+                                    + "' returned content with unexpected sha1 '" + actualSha1 + "'; expected '"
+                                    + expectedSha1 + "'. You may want to (a) re-run the current mojo"
+                                    + " with -Dlicense.forceDownload=true or (b) change the expected sha1 in"
+                                    + " the licenseUrlFileNames entry '"
+                                    + fileNameEntry.getFile().getName()
+                                    + "' or (c) split the entry so that"
+                                    + " its URLs return content with different sha1 sums.");
                             }
                             return LicenseDownloadResult.success(updatedFile, actualSha1, fileNameEntry.isPreferred());
                         } catch (NoSuchAlgorithmException e) {
@@ -339,8 +336,8 @@ public class LicenseDownloader implements AutoCloseable {
                         }
                     } else {
                         final Charset cs = contentType != null
-                                ? (contentType.getCharset() == null ? this.charset : contentType.getCharset())
-                                : this.charset;
+                            ? (contentType.getCharset() == null ? this.charset : contentType.getCharset())
+                            : this.charset;
                         try (BufferedReader r = new BufferedReader(new InputStreamReader(entity.getContent(), cs))) {
                             return sanitize(r, updatedFile, cs, sanitizers, fileNameEntry.isPreferred());
                         }
@@ -366,7 +363,7 @@ public class LicenseDownloader implements AutoCloseable {
             return downloadUrl(licenseUrlString);
         }
         // There is no protocol prefix, try the original, then HTTPS and HTTP.
-        String[] protocolPrefixes = new String[] {
+        String[] protocolPrefixes = new String[]{
             // Prefer HTTPS, since it's secure.
             PROTOCOL_HTTPS,
             /* HTTPS may not always be available, especially in complex proxy environments.
@@ -376,15 +373,15 @@ public class LicenseDownloader implements AutoCloseable {
         for (int index = -1; index < protocolPrefixes.length; index++) {
             try {
                 String prefixedLicenseUrlString =
-                        index >= 0 ? protocolPrefixes[index] + licenseUrlString : licenseUrlString;
+                    index >= 0 ? protocolPrefixes[index] + licenseUrlString : licenseUrlString;
                 return downloadUrl(prefixedLicenseUrlString);
             } catch (IOException e) {
                 if (LOG.isDebugEnabled()) {
                     if (index < protocolPrefixes.length - 1) {
                         LOG.debug(
-                                "Failed to download from \"{}\". Trying \"{}\" next.",
-                                licenseUrlString,
-                                protocolPrefixes[index + 1] + licenseUrlString);
+                            "Failed to download from \"{}\". Trying \"{}\" next.",
+                            licenseUrlString,
+                            protocolPrefixes[index + 1] + licenseUrlString);
                     } else {
                         LOG.debug("Failed to download from \"{}\". This was the last attempt", licenseUrlString);
                     }
@@ -395,7 +392,7 @@ public class LicenseDownloader implements AutoCloseable {
             }
         }
         throw new IllegalStateException(
-                "This code should never be reached," + " either returning a connection or throwing an exception.");
+            "This code should never be reached," + " either returning a connection or throwing an exception.");
     }
 
     /**
@@ -410,8 +407,8 @@ public class LicenseDownloader implements AutoCloseable {
     }
 
     static LicenseDownloadResult sanitize(
-            BufferedReader r, File out, Charset charset, List<ContentSanitizer> sanitizers, boolean preferredFileName)
-            throws IOException {
+        BufferedReader r, File out, Charset charset, List<ContentSanitizer> sanitizers, boolean preferredFileName)
+        throws IOException {
         final StringBuilder contentBuilder = new StringBuilder();
         // CHECKSTYLE_OFF: MagicNumber
         char[] buffer = new char[8192];
@@ -494,8 +491,8 @@ public class LicenseDownloader implements AutoCloseable {
         // Provide credentials scoped to the target host
         final CredentialsProvider credsProvider = new BasicCredentialsProvider();
         credsProvider.setCredentials(
-                new AuthScope(requestUrl.getHost(), requestUrl.getPort()),
-                new UsernamePasswordCredentials(userName, password));
+            new AuthScope(requestUrl.getHost(), requestUrl.getPort()),
+            new UsernamePasswordCredentials(userName, password));
         final HttpClientContext localContext = HttpClientContext.create();
         localContext.setAuthCache(authCache);
         localContext.setCredentialsProvider(credsProvider);
@@ -584,12 +581,12 @@ public class LicenseDownloader implements AutoCloseable {
         @Override
         public String toString() {
             return "LicenseDownloadResult{"
-                    + "file=" + file
-                    + ", errorMessage='" + errorMessage + '\''
-                    + ", sha1='" + sha1 + '\''
-                    + ", normalizedContentChecksum='" + normalizedContentChecksum + '\''
-                    + ", preferredFileName=" + preferredFileName
-                    + '}';
+                + "file=" + file
+                + ", errorMessage='" + errorMessage + '\''
+                + ", sha1='" + sha1 + '\''
+                + ", normalizedContentChecksum='" + normalizedContentChecksum + '\''
+                + ", preferredFileName=" + preferredFileName
+                + '}';
         }
     }
 
@@ -619,19 +616,19 @@ public class LicenseDownloader implements AutoCloseable {
 
     private static String normalizeString(String contentString) {
         return contentString
-                // Windows
-                .replace("\r\n", " ")
-                // Classic MacOS
-                .replace("\r", " ")
-                // *nix
-                .replace("\n", " ")
-                // Set all spaces, tabs, etc. to one space width
-                .replaceAll("\\s\\s+", " ")
-                /* License files exist which are completely identical, except that someone changed
-                <http://fsf.org/> to <https://fsf.org/>.
-                 */
-                .replace(PROTOCOL_HTTP, PROTOCOL_HTTPS)
-                // All to lowercase
-                .toLowerCase();
+            // Windows
+            .replace("\r\n", " ")
+            // Classic MacOS
+            .replace("\r", " ")
+            // *nix
+            .replace("\n", " ")
+            // Set all spaces, tabs, etc. to one space width
+            .replaceAll("\\s\\s+", " ")
+            /* License files exist which are completely identical, except that someone changed
+            <http://fsf.org/> to <https://fsf.org/>.
+             */
+            .replace(PROTOCOL_HTTP, PROTOCOL_HTTPS)
+            // All to lowercase
+            .toLowerCase();
     }
 }

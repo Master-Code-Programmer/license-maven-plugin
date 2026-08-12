@@ -22,9 +22,6 @@ package org.codehaus.mojo.license.download;
  * #L%
  */
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -53,6 +50,8 @@ import org.codehaus.mojo.license.extended.ExtendedInfo;
 import org.codehaus.mojo.license.extended.InfoFile;
 import org.codehaus.mojo.license.spdx.SpdxLicenseInfo;
 import org.codehaus.mojo.license.spdx.SpdxLicenseList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.osgi.framework.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -204,7 +203,7 @@ public class LicensedArtifact {
         }
 
         @Nullable
-        private ExtendedInfo extraInfosFromArtifact(@Nonnull Artifact artifact) {
+        private ExtendedInfo extraInfosFromArtifact(@NonNull Artifact artifact) {
             if (artifact.getFile() == null) {
                 LOG.error("Artifact {} has no valid file set", artifact);
                 return null;
