@@ -94,8 +94,8 @@ class LicenseSummaryTest {
      */
     @Test
     void testWriteReadLicenseSummary()
-            throws IOException, SAXException, ParserConfigurationException, TransformerFactoryConfigurationError,
-                    TransformerException {
+        throws IOException, SAXException, ParserConfigurationException, TransformerFactoryConfigurationError,
+        TransformerException {
         List<ProjectLicenseInfo> licSummary = new ArrayList<>();
         ProjectLicenseInfo dep1 = new ProjectLicenseInfo("org.test", "test1", "1.0", buildExtendedInfo(1));
         ProjectLicenseInfo dep2 = new ProjectLicenseInfo("org.test", "test2", "2.0", buildExtendedInfo(2));
@@ -189,8 +189,8 @@ class LicenseSummaryTest {
         } else {
             // on JDK 8 this should throw an UnsupportedOperationException
             UnsupportedOperationException exception = assertThrows(
-                    UnsupportedOperationException.class,
-                    () -> CalcFileWriter.write(licSummary, licensesCalcOutputFile.toFile()));
+                UnsupportedOperationException.class,
+                () -> CalcFileWriter.write(licSummary, licensesCalcOutputFile.toFile(), dataFormatting, excludedLicenses));
             assertEquals("Write LibreOffice Calc file (ODS) requires JDK 11+", exception.getMessage());
         }
     }
@@ -216,7 +216,7 @@ class LicenseSummaryTest {
     private static ExtendedInfo buildExtendedInfo(int suffix) {
         ExtendedInfo extendedInfo = new ExtendedInfo();
         Artifact artifact = new DefaultArtifact(
-                "org.test", "test" + suffix, "2.0", "compile", "jar", null, new DefaultArtifactHandler());
+            "org.test", "test" + suffix, "2.0", "compile", "jar", null, new DefaultArtifactHandler());
         extendedInfo.setArtifact(artifact);
         extendedInfo.setBundleLicense("Bundle Test License " + suffix);
         extendedInfo.setBundleVendor("Bundle Test Vendor " + suffix);
@@ -253,7 +253,7 @@ class LicenseSummaryTest {
         InfoFile infoFile = new InfoFile();
         infoFile.setContent("This is " + noticeType.name() + " test content " + suffix);
         infoFile.setExtractedCopyrightLines(
-                new HashSet<>(Collections.singletonList("Test " + noticeType.name() + suffix)));
+            new HashSet<>(Collections.singletonList("Test " + noticeType.name() + suffix)));
         infoFile.setFileName(noticeType.name() + " " + suffix + ".txt");
         infoFile.setType(noticeType);
         return infoFile;
