@@ -132,7 +132,7 @@
 
     <version.httpcomponents.httpclient>4.5.14</version.httpcomponents.httpclient>
     <version.httpcomponents.httpcore>4.4.16</version.httpcomponents.httpcore>
-    <version.odfdom-java>0.12.0</version.odfdom-java>
+    <version.odfdom-java>0.13.0</version.odfdom-java>
 
     <!-- license configuration -->
     <license.useMissingFile>true</license.useMissingFile>
@@ -308,7 +308,7 @@
     <dependency>
       <groupId>org.jspecify</groupId>
       <artifactId>jspecify</artifactId>
-      <version>1.0.0</version>
+      <version>1.0.1</version>
     </dependency>
 
     <!-- Microsoft Excel XLSX export -->
@@ -353,21 +353,6 @@
           <configuration>
             <!-- due to usage of JDK 11 dependencies with multi-release jar support -->
             <requiredJavaVersion>8</requiredJavaVersion>
-          </configuration>
-        </plugin>
-
-        <!--
-        Write later versions of dependencies and plugins to "dependencies.txt" with
-        "mvn versions:display-dependency-updates -l dependencies.txt".
-        -->
-        <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>versions-maven-plugin</artifactId>
-          <version>2.17.1</version>
-          <configuration>
-            <!-- Ignore alphas, betas, milestones, release-candidates, etc. -->
-            <ignoredVersions>(?i).*-(alpha|beta|m|rc)([-.]?\d+)?</ignoredVersions>
-            <processDependencyManagementTransitive>false</processDependencyManagementTransitive>
           </configuration>
         </plugin>
       </plugins>
@@ -430,6 +415,20 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <!--
+       Write later versions of dependencies and plugins to "dependencies.txt" with
+       "mvn versions:display-dependency-updates -l dependencies.txt".
+       -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>2.17.1</version>
+        <configuration>
+          <!-- Ignore alphas, betas, milestones, release-candidates, etc. -->
+          <ignoredVersions>(?i).*-(alpha|beta|m|rc)([-.]?\d+)?</ignoredVersions>
+          <processDependencyManagementTransitive>false</processDependencyManagementTransitive>
+        </configuration>
       </plugin>
     </plugins>
   </build>

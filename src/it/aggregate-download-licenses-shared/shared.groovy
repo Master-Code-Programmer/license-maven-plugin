@@ -139,7 +139,7 @@ static void checkResultingLicensesXml(CustomLogger log, File basedir, String exp
     Comment this line in, if there have been changes in the data sorting and new files to check against, must be
     created.
     */
-    // saveDependencyInfos(log, dependencyInfos)
+    saveDependencyInfos(log, dependencyInfos)
 
     Path expectedPath = Paths.get(basedir.toString(), expected)
 
@@ -147,6 +147,9 @@ static void checkResultingLicensesXml(CustomLogger log, File basedir, String exp
     DependencyInfos expectedDependencyInfos =
         (DependencyInfos) jaxbSerializer.createUnmarshaller().unmarshal(expectedPath.toFile())
 
+    // FIXME: Remove.
+    log.log(Level.INFO, "1 Found {0} dependencies in {1}. Expected: {2}", dependencyInfos.size(), licensesFile.getAbsolutePath(),
+        expectedDependencyInfos.dependencyInfos.size())
     assertEquals(
         expectedDependencyInfos.dependencyInfos.size(),
         dependencyInfos.size(),
@@ -177,12 +180,13 @@ private static ArrayList<DependencyInfo> parseGeneratedLicensesXml(CustomLogger 
         throw new IllegalArgumentException("No dependencies found in: " + licensesFile.getAbsolutePath())
     }
 
+    log.log(Level.INFO, "Found {0} dependencies in {1}", dependencies.size(), licensesFile.getAbsolutePath())
     dependencies.each { dependency ->
-        def name = dependency.name.text()
-        def groupId = dependency.groupId.text()
-        def artifactId = dependency.artifactId.text()
-        def version = dependency.version.text()
-        def licenses = dependency.licenses.license.name*.text().sort()
+        String name = dependency.name.text()
+        String groupId = dependency.groupId.text()
+        String artifactId = dependency.artifactId.text()
+        String version = dependency.version.text()
+        List<String> licenses = dependency.licenses.license.name*.text().sort()
 
         // Filter this one out, since this is JDK version dependent.
         if (name == "JavaBeans Activation Framework") {
@@ -230,7 +234,7 @@ private static void saveDependencyInfos(CustomLogger log, List<DependencyInfo> d
      Make this a warning to make it easy to find.
      Remember: This is only in the "target/it/[Test]/build.log" file, not in the normal log output.
      */
-    log.log(Level.WARNING, "Sorted XML: {0}", tempFile.getAbsolutePath())
+    log.log(Level.WARNING, "Sorted XML: {0} with {1} entries.", tempFile.getAbsolutePath(), dependencyInfos.size())
 }
 
 private static JAXBContext createJaxbSerializer() throws JAXBException {

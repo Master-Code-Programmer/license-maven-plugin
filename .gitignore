@@ -30,3 +30,4 @@ bin/
 /src/it/aggregate-download-licenses-sort-by-licenseMatch/*.html
 /src/it/aggregate-download-licenses-sort-by-licenseName/*.html
 /src/it/aggregate-download-licenses-sort-by-pluginId/*.html
+/versions.txt

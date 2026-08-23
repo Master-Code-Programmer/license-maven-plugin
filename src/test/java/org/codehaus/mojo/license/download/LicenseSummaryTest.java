@@ -29,7 +29,7 @@ import org.apache.maven.model.Developer;
 import org.apache.maven.model.Organization;
 import org.apache.maven.model.Scm;
 import org.codehaus.mojo.license.AbstractAddThirdPartyMojo;
-import org.codehaus.mojo.license.AbstractDownloadLicensesMojo.DataFormatting;
+import org.codehaus.mojo.license.DataFormatting;
 import org.codehaus.mojo.license.Eol;
 import org.codehaus.mojo.license.extended.ExtendedInfo;
 import org.codehaus.mojo.license.extended.InfoFile;

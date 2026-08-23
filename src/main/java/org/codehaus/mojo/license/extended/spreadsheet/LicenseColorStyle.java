@@ -1,7 +1,7 @@
 package org.codehaus.mojo.license.extended.spreadsheet;
 
 import org.codehaus.mojo.license.AbstractAddThirdPartyMojo;
-import org.codehaus.mojo.license.AbstractDownloadLicensesMojo;
+import org.codehaus.mojo.license.DataFormatting;
 import org.codehaus.mojo.license.download.ProjectLicense;
 
 /**
@@ -31,7 +31,7 @@ enum LicenseColorStyle {
 
     static LicenseColorStyle getLicenseColorStyle(
             ProjectLicense license,
-            AbstractDownloadLicensesMojo.DataFormatting dataFormatting,
+            DataFormatting dataFormatting,
             AbstractAddThirdPartyMojo.ExcludedLicenses excludedLicenses) {
         final LicenseColorStyle licenseColorStyle;
         if (excludedLicenses != null && excludedLicenses.contains(license.getName())) {

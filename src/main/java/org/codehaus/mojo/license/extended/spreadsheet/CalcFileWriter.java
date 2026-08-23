@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.List;
 
 import org.codehaus.mojo.license.AbstractAddThirdPartyMojo;
-import org.codehaus.mojo.license.AbstractDownloadLicensesMojo;
+import org.codehaus.mojo.license.DataFormatting;
 import org.codehaus.mojo.license.download.ProjectLicenseInfo;
 
 /**
@@ -16,7 +16,7 @@ public class CalcFileWriter {
     }
 
     public static void write(List<ProjectLicenseInfo> projectLicenseInfos, final File licensesCalcOutputFile,
-                             AbstractDownloadLicensesMojo.DataFormatting dataFormatting,
+                             DataFormatting dataFormatting,
                              AbstractAddThirdPartyMojo.ExcludedLicenses excludedLicenses) {
         throw new UnsupportedOperationException("Write LibreOffice Calc file (ODS) requires JDK 11+");
     }

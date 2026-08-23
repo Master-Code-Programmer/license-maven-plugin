@@ -19,7 +19,7 @@ import org.apache.maven.model.Developer;
 import org.apache.maven.model.Organization;
 import org.apache.maven.model.Scm;
 import org.codehaus.mojo.license.AbstractAddThirdPartyMojo;
-import org.codehaus.mojo.license.AbstractDownloadLicensesMojo.DataFormatting;
+import org.codehaus.mojo.license.DataFormatting;
 import org.codehaus.mojo.license.download.ProjectLicense;
 import org.codehaus.mojo.license.download.ProjectLicenseInfo;
 import org.codehaus.mojo.license.extended.ExtendedInfo;
@@ -31,6 +31,7 @@ import org.odftoolkit.odfdom.doc.table.OdfTableCellRange;
 import org.odftoolkit.odfdom.doc.table.OdfTableColumn;
 import org.odftoolkit.odfdom.doc.table.OdfTableRow;
 import org.odftoolkit.odfdom.dom.OdfContentDom;
+import org.odftoolkit.odfdom.dom.OdfDocumentNamespace;
 import org.odftoolkit.odfdom.dom.OdfSettingsDom;
 import org.odftoolkit.odfdom.dom.element.config.ConfigConfigItemElement;
 import org.odftoolkit.odfdom.dom.element.config.ConfigConfigItemMapEntryElement;
@@ -42,6 +43,7 @@ import org.odftoolkit.odfdom.dom.style.OdfStyleFamily;
 import org.odftoolkit.odfdom.dom.style.props.OdfTableColumnProperties;
 import org.odftoolkit.odfdom.incubator.doc.office.OdfOfficeStyles;
 import org.odftoolkit.odfdom.incubator.doc.style.OdfStyle;
+import org.odftoolkit.odfdom.pkg.OdfElement;
 import org.odftoolkit.odfdom.type.Color;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -542,7 +544,7 @@ public class CalcFileWriter {
         for (ProjectLicenseInfo projectInfo : projectLicenseInfos) {
             final OdfStyle cellStyle, hyperlinkStyle;
             LOG.debug(
-                "Writing {}:{} into LibreOffice calc file", projectInfo.getGroupId(), projectInfo.getArtifactId());
+                "Writing {}:{} into LibreOffice Calc file", projectInfo.getGroupId(), projectInfo.getArtifactId());
             if (grayBackground) {
                 cellStyle = styleGray;
                 hyperlinkStyle = hyperlinkStyleGray;
@@ -1169,7 +1171,26 @@ public class CalcFileWriter {
         cell.setStringValue(cellValue);
         cell.getOdfElement().setStyleName(styleName);
 
-        // TODO: Add grouping, with a hierarchy, after ODFToolkit offers it.
+        groupRows(table, startColumn, endColumn, rowIndex, false);
+    }
+
+    // TODO: This is a workaround for LibreOffice Calc, which doesn't support column grouping.
+    private static void groupRows(OdfTable table, int startColumn, int endColumn, int rowIndex, boolean collapsed) {
+        OdfElement tableEl = table.getOdfElement();
+
+        OdfElement groupEl = (OdfElement) tableEl.getOwnerDocument()
+            .createElementNS(OdfDocumentNamespace.TABLE.getUri(), "table:table-row-group");
+
+        // Optional: collapsed by default
+        groupEl.setAttributeNS(OdfDocumentNamespace.TABLE.getUri(), "table:display", Boolean.toString(!collapsed));
+
+        OdfElement firstRowEl = table.getRowByIndex(rowIndex).getOdfElement();
+        tableEl.insertBefore(groupEl, firstRowEl);
+
+        for (int row = startColumn; row <= endColumn; row++) {
+            // Always startRow because node moves.
+            groupEl.appendChild(table.getColumnByIndex(startColumn).getOdfElement());
+        }
     }
 
     private static OdfTableCell createCellsInRow(int startColumn, int exclusiveEndColumn, OdfTableRow inRow) {

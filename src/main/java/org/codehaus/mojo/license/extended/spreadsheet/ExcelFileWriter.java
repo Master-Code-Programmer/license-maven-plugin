@@ -61,7 +61,7 @@ import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.codehaus.mojo.license.AbstractAddThirdPartyMojo;
-import org.codehaus.mojo.license.AbstractDownloadLicensesMojo;
+import org.codehaus.mojo.license.DataFormatting;
 import org.codehaus.mojo.license.download.ProjectLicense;
 import org.codehaus.mojo.license.download.ProjectLicenseInfo;
 import org.codehaus.mojo.license.extended.ExtendedInfo;
@@ -91,7 +91,7 @@ public class ExcelFileWriter {
     public static void write(
             List<ProjectLicenseInfo> projectLicenseInfos,
             final File licensesExcelOutputFile,
-            AbstractDownloadLicensesMojo.DataFormatting dataFormatting,
+            DataFormatting dataFormatting,
             AbstractAddThirdPartyMojo.ExcludedLicenses excludedLicenses) {
         if (CollectionUtils.isEmpty(projectLicenseInfos)) {
             LOG.debug("Nothing to write to excel, no project data.");
@@ -374,7 +374,7 @@ public class ExcelFileWriter {
         CellStyles(
                 XSSFWorkbook wb,
                 XSSFColor alternatingRowsColor,
-                AbstractDownloadLicensesMojo.DataFormatting dataFormatting) {
+                DataFormatting dataFormatting) {
             hyperlinkStyleNormal = createHyperlinkStyle(wb, null);
             hyperlinkStyleGray = createHyperlinkStyle(wb, alternatingRowsColor);
 
@@ -415,7 +415,7 @@ public class ExcelFileWriter {
                 XSSFWorkbook wb,
                 XSSFColor backgroundColor,
                 IndexedColors indexedColor,
-                AbstractDownloadLicensesMojo.DataFormatting dataFormatting) {
+                DataFormatting dataFormatting) {
             Font highlightUnknownFont = wb.createFont();
             highlightUnknownFont.setColor(indexedColor.getIndex());
             XSSFCellStyle colorStyle = wb.createCellStyle();
@@ -476,7 +476,7 @@ public class ExcelFileWriter {
             XSSFWorkbook wb,
             Sheet sheet,
             XSSFColor alternatingRowsColor,
-            AbstractDownloadLicensesMojo.DataFormatting dataFormatting,
+            DataFormatting dataFormatting,
             AbstractAddThirdPartyMojo.ExcludedLicenses excludedLicenses) {
         final int firstRowIndex = 3;
         int currentRowIndex = firstRowIndex;
@@ -689,7 +689,7 @@ public class ExcelFileWriter {
             ProjectLicense license,
             CellStyles cellStyles,
             boolean grayBackground,
-            AbstractDownloadLicensesMojo.DataFormatting dataFormatting,
+            DataFormatting dataFormatting,
             AbstractAddThirdPartyMojo.ExcludedLicenses excludedLicenses) {
         Cell[] licenses = createDataCellsInRow(
                 licenseRow,
